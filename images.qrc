@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>tutor_exilius_logo_64x64.png</file>
+    </qresource>
+</RCC>
