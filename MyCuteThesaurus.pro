@@ -29,16 +29,21 @@ SOURCES += \
         mainwindow.cpp \
     db_manager.cpp \
     log.cpp \
-    customaboutdialog.cpp
+    customaboutdialog.cpp \
+    mytextedit.cpp \
+    translationdialog.cpp
 
 HEADERS += \
         mainwindow.h \
     db_manager.h \
     log.h \
-    customaboutdialog.h
+    customaboutdialog.h \
+    mytextedit.h \
+    translationdialog.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    translationdialog.ui
 
 INCLUDEPATH += spdlog
 

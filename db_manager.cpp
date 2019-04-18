@@ -362,6 +362,185 @@ QVector<QString> DB_Manager::getLangs() const
     return langs;
 }
 
+int DB_Manager::getLangId( const QString &langTag ) const
+{
+    int langId = 0;
+
+    QSqlQuery query( this->db );
+    query.prepare( "SELECT * FROM languages WHERE lang = :langTag" );
+    query.bindValue( ":langTag", langTag );
+
+    if( query.exec() )
+    {
+        if( query.next() )
+        {
+            langId = query.value( "id" ).toInt();
+        }
+    }
+    else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+    }
+
+    return langId;
+}
+
+int DB_Manager::getWordId( const QString &word, const int &lang_id ) const
+{
+    QSqlQuery query( this->db );
+    query.prepare( "SELECT * FROM words WHERE word = :word AND lang_id = :lang_id" );
+
+    query.bindValue( ":word", word );
+    query.bindValue( ":lang_id", lang_id );
+
+    if( query.exec() )
+    {
+        if( query.next() )
+        {
+            return query.value( "id" ).toInt();
+        }
+
+        throw "Could not be! There is no current language set in table settings!!!";
+    }
+    else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+bool DB_Manager::isTranslatedWord( const QString &word, const int &lang_id ) const
+{
+    if( !this->isKnownWord( word, lang_id ) )
+    {
+        return false;
+    }
+    else
+    {
+        const int word_id = this->getWordId( word, lang_id );
+        const int native_lang_id = this->getLangId( this->getCurrentNativeLang() );
+
+        QSqlQuery query( this->db );
+        query.prepare( "SELECT * FROM words,translations WHERE translations.from_word_id = :word_id "
+                       "and translations.to_word_id=words.id and words.lang_id = :native_lang_id" );
+
+        query.bindValue( ":word_id", word_id );
+        query.bindValue( ":native_lang_id", native_lang_id );
+
+        if( query.exec() )
+        {
+            if( query.next() )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+bool DB_Manager::isKnownWord( const QString &word, const int &lang_id ) const
+{
+    //const int wordId{ this->getWordId( word ) };
+    //const int nativeLangId = this->getLangId( this->getCurrentNativeLang() );
+
+    QSqlQuery query( this->db );
+    query.prepare( "SELECT id FROM words WHERE word = :word AND lang_id = :lang_id" );
+
+    query.bindValue( ":word", word );
+    query.bindValue( ":lang_id", lang_id );
+
+    if( query.exec() )
+    {
+        if( query.next() )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+QString DB_Manager::getCurrentNativeLang() const
+{
+    QSqlQuery query( this->db );
+
+    if( query.exec( "select lang from settings,languages WHERE settings.value = languages.id" ) )
+    {
+        if( query.next() )
+        {
+            const QString langTag{ query.value( "lang" ).toString() };
+
+            if( !langTag.isEmpty() )
+            {
+                return langTag;
+            }
+        }
+
+        throw "Could not be! There is no current language set in table settings!!!";
+    }
+    else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+void DB_Manager::insertNewWord( const QString &word, const int &lang_id ) const
+{
+    QSqlQuery query( this->db );
+
+    query.prepare( "INSERT INTO words(word,lang_id)"
+                   "VALUES(:word,:lang_id)" );
+
+    query.bindValue( ":word", word );
+    query.bindValue( ":lang_id", lang_id );
+
+    if( !query.exec() )
+    {
+        qDebug() << "SqLite error:" << query.lastError().text();
+    }
+}
+
+void DB_Manager::translate( const QString &nativeWord, const int &nativeLangId,
+                            const QString &foreignWord, const int &foreignLangId ) const
+{
+    QSqlQuery query( this->db );
+
+    if( !this->isKnownWord( nativeWord, nativeLangId ) )
+    {
+        this->insertNewWord( nativeWord, nativeLangId );
+    }
+
+    if( !this->isKnownWord( foreignWord, foreignLangId ) )
+    {
+        this->insertNewWord( foreignWord, foreignLangId );
+    }
+
+    const int from_word_id = this->getWordId( nativeWord, nativeLangId );
+    const int to_word_id = this->getWordId( foreignWord, foreignLangId );
+
+    query.prepare( "INSERT INTO translations(from_word_id,to_word_id)"
+                   "VALUES(:from_word_id,:to_word_id)" );
+
+    query.bindValue( ":from_word_id", from_word_id );
+    query.bindValue( ":to_word_id", to_word_id );
+
+    if( !query.exec() )
+    {
+        qDebug() << "SqLite error:" << query.lastError().text();
+    }
+}
+
 bool DB_Manager::tableExists( const QString &tableName ) const
 {
     QSqlQuery query( this->db );
