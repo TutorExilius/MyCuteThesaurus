@@ -4,7 +4,10 @@
 #include <QMainWindow>
 #include <QTimer>
 
+#include <list>
+
 #include "db_manager.h"
+#include "word.h"
 
 namespace Ui {
     class MainWindow;
@@ -36,14 +39,21 @@ private slots:
 
     void on_textEdit_textChanged();
 
+    void on_pushButton_edit_clicked();
+
 private:
     void fillComboBox();
     QString colorizeWord( QString foreignWord );
     QString maskHtml( const QChar &ch );
-    void check();
+    void resetHighlighting();
     void resetStatistic();
+    void reorganiseDataStructure( const std::vector<Word> &foreign_words );
+    QString newText();
 
     Ui::MainWindow *ui;
+    std::list<Word> native_words;
+    std::list<Word> foreign_words;
+
     DB_Manager *dbManager;
     QTimer *dbConnectionCheckTimer;
     bool analysed;

@@ -12,19 +12,6 @@ MyTextEdit::MyTextEdit( QWidget *parent )
 {
 }
 
-bool MyTextEdit::isWordDelim( const QChar &ch )
-{
-    for( const QChar delim : { L'!', L'?', L'.', L',', L';', L'¿', L':', L'(', L')',
-         L'[',L']',L'{',L'}', L'"', L'“', L'”', L'«', L'»' } )
-    {
-        if( delim == ch )
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
 {
@@ -43,7 +30,7 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
     // find start
     for( int i = startPos; i>=0; i-- )
     {
-        if( text[i].isSpace() || MyTextEdit::isWordDelim( text[i] ) )
+        if( text[i].isSpace() )
         {
             startPos = i+1;
             break;
@@ -58,7 +45,7 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
     // find end
     for( int i = endPos; i<text.size(); i++ )
     {
-        if( text[i].isSpace() || MyTextEdit::isWordDelim( text[i] ) )
+        if( text[i].isSpace() )
         {
             endPos = i-1;
             break;

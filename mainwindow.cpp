@@ -5,6 +5,7 @@
 #include <QMap>
 #include <QMessageBox>
 
+#include "word.h"
 #include "mytextedit.h"
 #include "customaboutdialog.h"
 #include "log.h"
@@ -112,48 +113,72 @@ void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
 
 void MainWindow::on_pushButton_analyse_clicked()
 {
+    this->ui->textEdit->setReadOnly( true );
+    this->ui->comboBox_langs->setEnabled( false );
+    this->ui->pushButton_analyse->setEnabled( false );
+    this->ui->pushButton_edit->setEnabled( true );
+
+    std::vector<Word> tmp_foreign_words;
     const QString selectedLang{ this->ui->comboBox_langs->currentText() };
 
     const QString text{ this->ui->textEdit->toPlainText() };
-    QString newText;
 
     // build word
     QString word;
+    QString link;
 
     for( const QChar &ch : text )
     {
-        if( !ch.isSpace() && !MyTextEdit::isWordDelim( ch ) )
+        if( !ch.isSpace() )
         {
+            if( !link.isEmpty() )
+            {
+                tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
+                link.clear();
+            }
+
             word.append( ch );
         }
         else
         {
             if( !word.isEmpty() )
             {
-                newText.append( this->colorizeWord( word ) );
+                tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
                 word.clear();
             }
 
-            newText.append( this->maskHtml( ch ) );
+            link.append( this->maskHtml( ch ) );
         }
     }
 
-    newText.append( this->colorizeWord( word ) );
+    if( !word.isEmpty() )
+    {
+        tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
+    }
+
+    if( !link.isEmpty() )
+    {
+        tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
+    }
+
+    // reorganise std::vector<std::list> native_words / foreign_words;
+    this->reorganiseDataStructure( tmp_foreign_words );
 
     // clear current textEdit-content and reset cursors position to 0
     this->ui->textEdit->clear();
 
-    // refill textEdit with html text by using textCursor().insertHtml(...),
-    // so the cursor can track the end of text
-    this->ui->textEdit->textCursor().insertHtml( newText );
+    // TODO: refill textEdit
+    const QString newText = this->newText();
 
-    this->ui->comboBox_langs->setCurrentText( selectedLang );
+    // ??? why ??? this->ui->comboBox_langs->setCurrentText( selectedLang );
 
+
+
+    // recalculate statistics
     int sum = this->knownWords + this->unknownWords;
 
     double knownPerc = ( sum > 0 ) ? this->knownWords * 100.0 / sum : 0.0;
     double unknownPerc = ( sum > 0 ) ? this->unknownWords * 100.0 / sum : 0.0;
-
 
     const QString statistics{
         QString{ "%1 Words: Known %2 <span style=\"color: green;\">(%3%)</span> "
@@ -165,10 +190,47 @@ void MainWindow::on_pushButton_analyse_clicked()
                  .arg( unknownPerc, 0, 'f', 2 )
     };
 
-
-    this->ui->label_statistics->setText( statistics );
-
     this->analysed = true;
+    this->ui->textEdit->setHtml( newText );
+    this->ui->label_statistics->setText( statistics );
+    this->ui->comboBox_langs->setCurrentText( selectedLang );
+}
+
+void MainWindow::reorganiseDataStructure( const std::vector<Word> &foreign_words )
+{
+    this->foreign_words.clear();
+    this->native_words.clear();
+
+    // TODO: build new data structure
+
+    // temp ---
+    for( const Word &word : foreign_words )
+    {
+        this->foreign_words.push_back( word );
+    }
+    //---
+}
+
+QString MainWindow::newText()
+{
+    // TODO!
+
+    // temp ---
+    QString text;
+    for( const Word &word : this->foreign_words )
+    {
+        if( word.isWordType() )
+        {
+            text.append( this->colorizeWord( word.getContent() ) );
+        }
+        else
+        {
+            text.append( word.getContent() );
+        }
+    }
+
+    return text;
+    // ---
 }
 
 QString MainWindow::maskHtml( const QChar &ch )
@@ -227,7 +289,7 @@ QString MainWindow::colorizeWord( QString foreignWord )
 
 void MainWindow::onDoubleClicked()
 {
-    if( !analysed )
+    if( !this->analysed )
         return;
 
     const QString doubleClickedWord{ this->ui->textEdit->textCursor().selectedText() };
@@ -256,6 +318,7 @@ void MainWindow::resetStatistic()
     this->knownWords = 0;
     this->unknownWords = 0;
     this->analysed = false;
+    this->ui->label_statistics->setText( "" );
 }
 
 void MainWindow::on_comboBox_langs_currentTextChanged( const QString &section )
@@ -272,41 +335,54 @@ void MainWindow::on_comboBox_langs_currentTextChanged( const QString &section )
 
 void MainWindow::on_textEdit_textChanged()
 {
-    this->check();
+    /*
+    if( !this->analysed )
+    {
+        this->resetHighlighting();
+    }
+    else
+    {
+        this->analysed = false;
+    }
+    */
 }
 
-void MainWindow::check()
+void MainWindow::resetHighlighting()
 {
     // qDebug() << "TEXTCHANGED";
-     this->ui->comboBox_langs->setCurrentText( "Select Language:" );
+    this->ui->comboBox_langs->setCurrentText( "Select Language:" );
 
-     const QString redStyleText{ "<span style=\" color:#ff0000" };
-     const QString greenStyleText{ "<span style=\" color:#37e790" };
-     const QString blackStyleText{ "<span style=\" color:#000000" };
+    const QString redStyleText{ "<span style=\" color:#ff0000" };
+    const QString greenStyleText{ "<span style=\" color:#37e790" };
+    const QString blackStyleText{ "<span style=\" color:#000000" };
 
-     if( this->analysed )
-     {
-         QString htmlText{ this->ui->textEdit->toHtml() };
-         htmlText.replace( redStyleText, blackStyleText );
-         htmlText.replace( greenStyleText, blackStyleText );
 
-         qDebug() << htmlText;
+    QString htmlText{ this->ui->textEdit->toHtml() };
+    htmlText.replace( redStyleText, blackStyleText );
+    htmlText.replace( greenStyleText, blackStyleText );
 
-         if( this->ui->textEdit->toHtml() != htmlText )
-         {
-             QTextCursor cursor = this->ui->textEdit->textCursor();
-             const int cursorsPos =  cursor.position();
+    if( this->ui->textEdit->toHtml() != htmlText )
+    {
+      QTextCursor cursor = this->ui->textEdit->textCursor();
+      const int cursorsPos =  cursor.position();
 
-             this->ui->textEdit->setHtml( htmlText );
+      this->ui->textEdit->setHtml( htmlText );
 
-             cursor.setPosition( cursorsPos );
-             this->ui->textEdit->setTextCursor( cursor );
-         }
+      cursor.setPosition( cursorsPos );
+      this->ui->textEdit->setTextCursor( cursor );
+    }
 
-         this->analysed = false;
-         this->knownWords = 0;
-         this->unknownWords = 0;
-         this->ui->label_statistics->setText( "" );
-     }
+    this->resetStatistic();
 }
 
+
+void MainWindow::on_pushButton_edit_clicked()
+{
+    this->resetHighlighting();
+
+    this->ui->textEdit->setReadOnly( false );
+    this->ui->comboBox_langs->setEnabled( true );
+    this->ui->pushButton_analyse->setEnabled( true );
+
+    this->ui->pushButton_edit->setEnabled( false );
+}

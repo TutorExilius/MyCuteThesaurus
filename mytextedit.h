@@ -10,7 +10,6 @@ class MyTextEdit : public QTextEdit
 public:
     explicit MyTextEdit( QWidget *parent = nullptr );
 
-    static bool isWordDelim( const QChar &ch  );
 
 protected:
     void mouseDoubleClickEvent( QMouseEvent *e ) override;

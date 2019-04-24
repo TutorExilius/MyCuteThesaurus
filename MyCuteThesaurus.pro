@@ -31,7 +31,8 @@ SOURCES += \
     log.cpp \
     customaboutdialog.cpp \
     mytextedit.cpp \
-    translationdialog.cpp
+    translationdialog.cpp \
+    word.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,7 +40,8 @@ HEADERS += \
     log.h \
     customaboutdialog.h \
     mytextedit.h \
-    translationdialog.h
+    translationdialog.h \
+    word.h
 
 FORMS += \
         mainwindow.ui \
