@@ -129,11 +129,11 @@ void MainWindow::on_pushButton_analyse_clicked()
     QString word;
     QString link;
 
-    bool foreignLine = true;
+    //bool foreignLine = true;
 
     for( const QChar &ch : text )
     {
-        if( foreignLine )
+        //if( foreignLine )
         {
             if( !ch.isSpace() )
             {
@@ -159,7 +159,7 @@ void MainWindow::on_pushButton_analyse_clicked()
 
         if( ch == QChar{'\n'} )
         {
-            foreignLine = !foreignLine;
+       //     foreignLine = !foreignLine;
         }
     }
 
