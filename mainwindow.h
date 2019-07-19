@@ -53,6 +53,7 @@ private:
     QString mergeLanguages( const QString &foreignText, const QString &nativeText ) const;
     QString htmlWord( QString word, const QString &styleColor = "black" ) const;
     QString cascadeHtmlSpace( const int count ) const;
+    void restoreForeignText();
 
     Ui::MainWindow *ui;
     QVector<Word> foreign_words;

@@ -407,6 +407,7 @@ void MainWindow::onDoubleClicked()
 
         dialog->exec();
 
+        this->restoreForeignText();
         this->on_pushButton_analyse_clicked();
     }
 }
@@ -459,10 +460,23 @@ void MainWindow::resetHighlighting()
     this->resetStatistic();
 }
 
+void MainWindow::restoreForeignText()
+{
+    QString foreignText;
+
+    for( const Word &word : this->foreign_words )
+    {
+        foreignText.append( word.getContent() );
+    }
+
+    this->ui->textEdit->setText( foreignText );
+}
 
 void MainWindow::on_pushButton_edit_clicked()
 {
     this->resetHighlighting();
+
+    this->restoreForeignText();
 
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
