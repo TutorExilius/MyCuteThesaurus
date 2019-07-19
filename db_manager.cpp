@@ -338,7 +338,7 @@ bool DB_Manager::isOk() const
     }
 }
 
-QVector<QString> DB_Manager::getLangs() const
+QVector<QString> DB_Manager::getLanguages() const
 {
     QVector<QString> langs;
 
@@ -502,7 +502,7 @@ QString DB_Manager::getCurrentNativeLang() const
 {
     QSqlQuery query( this->db );
 
-    if( query.exec( "select lang from settings,languages WHERE settings.value = languages.id" ) )
+    if( query.exec( "select lang from settings,languages WHERE settings.key = 'NativeLanguageID' AND settings.value = languages.id" ) )
     {
         if( query.next() )
         {
@@ -517,6 +517,63 @@ QString DB_Manager::getCurrentNativeLang() const
         throw "Could not be! There is no current language set in table settings!!!";
     }
     else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+QString DB_Manager::getCurrentForeignLang() const
+{
+    QSqlQuery query( this->db );
+
+    if( query.exec( "select lang from settings,languages WHERE settings.key = 'ForeignLanguageID' AND settings.value = languages.id" ) )
+    {
+        if( query.next() )
+        {
+            const QString langTag{ query.value( "lang" ).toString() };
+
+            if( !langTag.isEmpty() )
+            {
+                return langTag;
+            }
+        }
+
+        throw "Could not be! There is no current language set in table settings!!!";
+    }
+    else
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+void DB_Manager::updateCurrentNativeLang( const QString &nativeLang ) const
+{
+    const int langId = this->getLangId( nativeLang.toLower() );
+    QSqlQuery query( this->db );
+
+    query.prepare( "UPDATE settings SET value = :nativeLanguageID WHERE key = 'NativeLanguageID'" );
+
+    query.bindValue( ":nativeLanguageID", langId );
+
+    if( !query.exec() )
+    {
+        ::logError( "SqLite error:" + query.lastError().text() );
+        throw "SqLite error:" + query.lastError().text();
+    }
+}
+
+void DB_Manager::updateCurrentForeignLang( const QString &foreignLang ) const
+{
+    const int langId = this->getLangId( foreignLang.toLower() );
+    QSqlQuery query( this->db );
+
+    query.prepare( "UPDATE settings SET value = :foreignLang WHERE key = 'ForeignLanguageID'" );
+
+    query.bindValue( ":foreignLang", langId );
+
+    if( !query.exec() )
     {
         ::logError( "SqLite error:" + query.lastError().text() );
         throw "SqLite error:" + query.lastError().text();

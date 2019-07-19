@@ -22,7 +22,7 @@ public:
     bool isOk() const;
 
     // queries
-    QVector<QString> getLangs() const;
+    QVector<QString> getLanguages() const;
     int getLangId( const QString &langTag ) const;
     int getWordId( const QString &word, const int &lang_id ) const;
     QString getWord( const int word_id ) const;
@@ -30,6 +30,9 @@ public:
     bool isTranslatedWord( const QString &word, const int &lang_id ) const;
     bool isKnownWord( const QString &word, const int &lang_id ) const;
     QString getCurrentNativeLang() const;
+    QString getCurrentForeignLang() const;
+    void updateCurrentNativeLang( const QString &nativeLang ) const;
+    void updateCurrentForeignLang( const QString &foreignLang ) const;
     void translate( const QString &nativeWord, const int &nativeLangId,
                     const QString &foreignWord, const int &foreignLangId ) const;
 

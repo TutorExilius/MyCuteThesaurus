@@ -32,7 +32,8 @@ SOURCES += \
     customaboutdialog.cpp \
     mytextedit.cpp \
     translationdialog.cpp \
-    word.cpp
+    word.cpp \
+    settingdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -41,11 +42,13 @@ HEADERS += \
     customaboutdialog.h \
     mytextedit.h \
     translationdialog.h \
-    word.h
+    word.h \
+    settingdialog.h
 
 FORMS += \
         mainwindow.ui \
-    translationdialog.ui
+    translationdialog.ui \
+    settingdialog.ui
 
 INCLUDEPATH += spdlog
 

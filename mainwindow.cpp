@@ -12,6 +12,7 @@
 #include "customaboutdialog.h"
 #include "log.h"
 #include "translationdialog.h"
+#include "settingdialog.h"
 
 MainWindow::MainWindow( QWidget *parent )
 : QMainWindow{ parent }
@@ -76,7 +77,7 @@ void MainWindow::onDbConnectionTimeOut()
 
 void MainWindow::fillComboBox()
 {
-    const QVector<QString> langs = this->dbManager->getLangs();
+    const QVector<QString> langs = this->dbManager->getLanguages();
     this->ui->comboBox_langs->addItem( "Select Language:" );
 
     for( const QString &lang : langs )
@@ -487,5 +488,6 @@ void MainWindow::on_pushButton_edit_clicked()
 
 void MainWindow::on_action_Settings_triggered()
 {
-
+    SettingDialog *dialog = new SettingDialog{ this, this->dbManager };
+    dialog->exec();
 }
