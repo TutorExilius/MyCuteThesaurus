@@ -20,3 +20,18 @@ bool Word::isWordType() const
 {
     return ( this->type == TYPE::WORD );
 }
+
+bool Word::hasTranslations() const
+{
+    return !this->translations.isEmpty();
+}
+
+QVector<QString> Word::getTranslations() const
+{
+    return this->translations;
+}
+
+void Word::setTranslations(const QVector<QString> &translations)
+{
+    this->translations = translations;
+}

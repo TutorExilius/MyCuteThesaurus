@@ -7,19 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>221</height>
+    <height>355</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>400</width>
     <height>220</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>400</width>
-    <height>221</height>
    </size>
   </property>
   <property name="font">
@@ -224,6 +218,13 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="tableWidget_translations">
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SingleSelection</enum>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

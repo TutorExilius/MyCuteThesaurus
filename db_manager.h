@@ -25,12 +25,19 @@ public:
     QVector<QString> getLangs() const;
     int getLangId( const QString &langTag ) const;
     int getWordId( const QString &word, const int &lang_id ) const;
+    QString getWord( const int word_id ) const;
 
     bool isTranslatedWord( const QString &word, const int &lang_id ) const;
     bool isKnownWord( const QString &word, const int &lang_id ) const;
     QString getCurrentNativeLang() const;
     void translate( const QString &nativeWord, const int &nativeLangId,
                     const QString &foreignWord, const int &foreignLangId ) const;
+
+    QVector<QString> getTanslations( const QString &from_word, const int &foreign_lang_id,
+                                     const int &native_lang_id ) const;
+
+    void update( const int wordID, const QString &word ) const;
+    void remove( const int wordID ) const;
 
 private:
     bool tableExists( const QString &tableName ) const;

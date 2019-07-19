@@ -2,6 +2,7 @@
 #define WORD_H
 
 #include <QString>
+#include <QVector>
 
 enum class TYPE
 {
@@ -19,9 +20,13 @@ public:
     QString getContent() const;
 
     bool isWordType() const;
+    bool hasTranslations() const;
+    QVector<QString> getTranslations() const;
+    void setTranslations( const QVector<QString> &translations );
 
 private:
     QString content;
+    QVector<QString> translations;
     TYPE type;
 };
 

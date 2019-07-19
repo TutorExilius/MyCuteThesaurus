@@ -2,6 +2,12 @@
 #include "ui_translationdialog.h"
 
 #include <QLineEdit>
+#include <QStringList>
+#include <QString>
+#include <QTableWidget>
+#include <QVariant>
+#include <QKeyEvent>
+#include <QDebug>
 
 TranslationDialog::TranslationDialog( QWidget *parent, DB_Manager *db_manager )
 : QDialog{ parent }
@@ -12,11 +18,25 @@ TranslationDialog::TranslationDialog( QWidget *parent, DB_Manager *db_manager )
 {
     this->ui->setupUi( this );
 
+    QHeaderView *headerView = this->ui->tableWidget_translations->horizontalHeader();
+    headerView->setSectionResizeMode(QHeaderView::Stretch);
+
+    this->ui->tableWidget_translations->verticalHeader()->hide();
+
+    QFont font = this->ui->tableWidget_translations->horizontalHeader()->font();
+    font.setBold(true);
+
+    this->ui->tableWidget_translations->horizontalHeader()->setFont( font );
+
     // remove help button from task bar
     Qt::WindowFlags flags = windowFlags();
     Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
     flags = flags & ( ~helpFlag );
     this->setWindowFlags( flags );
+
+    QObject::connect( this->ui->tableWidget_translations, &QTableWidget::itemChanged,
+                      this, &TranslationDialog::onItemChanged,
+                      Qt::UniqueConnection );
 }
 
 TranslationDialog::~TranslationDialog()
@@ -31,7 +51,66 @@ void TranslationDialog::setForeignLangId( const int &foreignLangId )
 
 void TranslationDialog::setNativeLangId( const int &nativeLangId )
 {
-   this->nativeLangId = nativeLangId;
+    this->nativeLangId = nativeLangId;
+}
+
+// DEBUG only - REMOVE later!
+void TranslationDialog::fillTranslationTable( const QVector<std::pair<QString,int>> &list )
+{
+    if( list.empty() )
+    {
+        this->ui->tableWidget_translations->setVisible( false );
+        return;
+    }
+
+    this->ui->tableWidget_translations->setVisible( true );
+
+    this->ui->tableWidget_translations->setColumnCount( 1 );
+    this->ui->tableWidget_translations->setRowCount( list.size() );
+    this->ui->tableWidget_translations->setHorizontalHeaderLabels( QStringList("Word") );
+
+    for( int i=0; i<list.size(); ++i )
+    {
+        QTableWidgetItem *item = new QTableWidgetItem(list[i].first);
+        item->setData( Qt::UserRole, QVariant( list[i].second ) );
+
+        this->ui->tableWidget_translations->setItem( i, 0, item );
+    }
+}
+
+void TranslationDialog::keyPressEvent( QKeyEvent *e )
+{
+    QDialog::keyPressEvent(e);
+
+    switch( e->type() )
+    {
+      case QEvent::KeyPress:
+        if( e->key() == Qt::Key_Delete )
+        {
+            this->deleteItem( this->ui->tableWidget_translations->currentItem() );
+        }
+
+        break;
+      case QEvent::KeyRelease:
+        // fall through
+      default:
+        break;
+    }
+}
+
+void TranslationDialog::deleteItem( QTableWidgetItem *item )
+{
+    if( item == nullptr )
+        return;
+
+    bool ok = false;
+    const int wordID = item->data(Qt::UserRole).toInt( &ok );
+
+    if( ok )
+    {
+        this->db_manager->remove( wordID );
+        this->ui->tableWidget_translations->removeRow( item->row() );
+    }
 }
 
 void TranslationDialog::setUnknownWordLabelText( const QString &unknownWord )
@@ -65,4 +144,19 @@ void TranslationDialog::on_pushButton_add_clicked()
                                  nativeWord, this->nativeLangId );
 
     this->close();
+}
+
+void TranslationDialog::onItemChanged( QTableWidgetItem *item )
+{
+    const QString word = item->text().trimmed();
+
+    if( word.isEmpty() )
+    {
+        this->deleteItem( item );
+    }
+    else
+    {
+        const int wordID = item->data( Qt::UserRole ).toInt();
+        this->db_manager->update( wordID, word );
+    }
 }

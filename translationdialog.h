@@ -2,7 +2,13 @@
 #define TRANSLATIONDIALOG_H
 
 #include <QDialog>
+#include <QVector>
+#include <QString>
 
+// remove! ( DEBUG )
+#include <QListWidget>
+
+#include "mainwindow.h"
 #include "db_manager.h"
 
 namespace Ui {
@@ -23,12 +29,19 @@ public:
     void setForeignLangId( const int &foreignLangId );
     void setNativeLangId( const int &nativeLangId );
 
+    void fillTranslationTable( const QVector<std::pair<QString,int>> &list );
+
+protected:
+    void keyPressEvent(QKeyEvent * e) override;
+
 private slots:
     void on_pushButton_add_clicked();
+    void onItemChanged( QTableWidgetItem *item );
 
 private:
-    Ui::TranslationDialog *ui;
+    void deleteItem( QTableWidgetItem *item );
 
+    Ui::TranslationDialog *ui;
     int foreignLangId;
     int nativeLangId;
     DB_Manager *db_manager;

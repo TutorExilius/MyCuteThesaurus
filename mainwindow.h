@@ -3,8 +3,9 @@
 
 #include <QMainWindow>
 #include <QTimer>
-
-#include <list>
+#include <QTableWidgetItem>
+#include <QVector>
+#include <QPair>
 
 #include "db_manager.h"
 #include "word.h"
@@ -22,8 +23,8 @@ public:
     ~MainWindow() override;
 
     QString getSelectedText() const;
-    QString getNativeLang() const
-    ;
+    QString getNativeLang() const;
+
 public slots:
     void onDbConnectionTimeOut();
 
@@ -37,22 +38,24 @@ private slots:
 
     void on_comboBox_langs_currentTextChanged( const QString &arg1 );
 
-    void on_textEdit_textChanged();
-
     void on_pushButton_edit_clicked();
+
+    void on_action_Settings_triggered();
 
 private:
     void fillComboBox();
-    QString colorizeWord( QString foreignWord );
-    QString maskHtml( const QChar &ch );
+    QString colorizeWord( QString foreignWord, const bool isTranslated );
+    QString maskHtml( const QChar &ch ) const;
     void resetHighlighting();
     void resetStatistic();
-    void reorganiseDataStructure( const std::vector<Word> &foreign_words );
+    void buildTranslationStructure( const QVector<Word> &foreign_words );
     QString newText();
+    QString mergeLanguages( const QString &foreignText, const QString &nativeText ) const;
+    QString htmlWord( QString word, const QString &styleColor = "black" ) const;
+    QString cascadeHtmlSpace( const int count ) const;
 
     Ui::MainWindow *ui;
-    std::list<Word> native_words;
-    std::list<Word> foreign_words;
+    QVector<Word> foreign_words;
 
     DB_Manager *dbManager;
     QTimer *dbConnectionCheckTimer;

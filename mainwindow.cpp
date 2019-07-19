@@ -5,6 +5,8 @@
 #include <QMap>
 #include <QMessageBox>
 
+#include <algorithm>
+
 #include "word.h"
 #include "mytextedit.h"
 #include "customaboutdialog.h"
@@ -118,7 +120,7 @@ void MainWindow::on_pushButton_analyse_clicked()
     this->ui->pushButton_analyse->setEnabled( false );
     this->ui->pushButton_edit->setEnabled( true );
 
-    std::vector<Word> tmp_foreign_words;
+    QVector<Word> tmp_foreign_words;
     const QString selectedLang{ this->ui->comboBox_langs->currentText() };
 
     const QString text{ this->ui->textEdit->toPlainText() };
@@ -127,27 +129,37 @@ void MainWindow::on_pushButton_analyse_clicked()
     QString word;
     QString link;
 
+    bool foreignLine = true;
+
     for( const QChar &ch : text )
     {
-        if( !ch.isSpace() )
+        if( foreignLine )
         {
-            if( !link.isEmpty() )
+            if( !ch.isSpace() )
             {
-                tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
-                link.clear();
-            }
+                if( !link.isEmpty() )
+                {
+                    tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
+                    link.clear();
+                }
 
-            word.append( ch );
+                word.append( ch );
+            }
+            else
+            {
+                if( !word.isEmpty() )
+                {
+                    tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
+                    word.clear();
+                }
+
+                link.append( ch );
+            }
         }
-        else
-        {
-            if( !word.isEmpty() )
-            {
-                tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
-                word.clear();
-            }
 
-            link.append( this->maskHtml( ch ) );
+        if( ch == QChar{'\n'} )
+        {
+            foreignLine = !foreignLine;
         }
     }
 
@@ -162,13 +174,13 @@ void MainWindow::on_pushButton_analyse_clicked()
     }
 
     // reorganise std::vector<std::list> native_words / foreign_words;
-    this->reorganiseDataStructure( tmp_foreign_words );
+    this->buildTranslationStructure( tmp_foreign_words );
 
     // clear current textEdit-content and reset cursors position to 0
     this->ui->textEdit->clear();
 
-    // TODO: refill textEdit
-    const QString newText = this->newText();
+
+    const QString newContent = this->newText();
 
     // ??? why ??? this->ui->comboBox_langs->setCurrentText( selectedLang );
 
@@ -191,49 +203,126 @@ void MainWindow::on_pushButton_analyse_clicked()
     };
 
     this->analysed = true;
-    this->ui->textEdit->setHtml( newText );
+    this->ui->textEdit->setHtml( newContent );
     this->ui->label_statistics->setText( statistics );
     this->ui->comboBox_langs->setCurrentText( selectedLang );
 }
 
-void MainWindow::reorganiseDataStructure( const std::vector<Word> &foreign_words )
+void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
 {
     this->foreign_words.clear();
-    this->native_words.clear();
 
-    // TODO: build new data structure
+    const QString foreignLangTag{ this->ui->comboBox_langs->currentText().toLower() };
+    const QString nativeLangTag{ this->getNativeLang().toLower() };
 
-    // temp ---
-    for( const Word &word : foreign_words )
+    // get lang ids
+    const int foreignLangId = this->dbManager->getLangId( foreignLangTag );
+    const int nativeLangId = this->dbManager->getLangId( nativeLangTag );
+
+    for( Word word : foreign_words )
     {
+        if( word.isWordType() )
+        {
+            const QVector<QString> translations = this->dbManager->getTanslations(
+                        word.getContent(), foreignLangId, nativeLangId );
+
+            word.setTranslations( translations );
+        }
+
         this->foreign_words.push_back( word );
     }
-    //---
+}
+
+QString MainWindow::cascadeHtmlSpace( const int count ) const
+{
+    QString text;
+
+    for( int i=0; i<count; ++i )
+    {
+        text.append( "&nbsp;" );
+    }
+
+    return text;
 }
 
 QString MainWindow::newText()
 {
-    // TODO!
+    // TODO erweiter words bzw translations an die wordbreite (nachfüllen mit leerzeichen)
+    // this->updateWordWidth( this->foreign_words  );
 
-    // temp ---
-    QString text;
+    QString foreign_text;
+    QString native_text;
+
     for( const Word &word : this->foreign_words )
     {
+        const int wordLength = word.getContent().size();
+        const QVector<QString> translations = word.getTranslations();
+
         if( word.isWordType() )
         {
-            text.append( this->colorizeWord( word.getContent() ) );
+            foreign_text.append( this->colorizeWord( word.getContent(), word.hasTranslations() ) );
+
+            if( !translations.isEmpty() )
+            {
+                QString bestTranslation = translations.at( 0 );
+
+                if( bestTranslation.size() < wordLength )
+                {
+                    bestTranslation.resize( wordLength );
+                }
+                else
+                {
+                    foreign_text.append( this->cascadeHtmlSpace( bestTranslation.size() - wordLength ) );
+                }
+
+                native_text.append( this->htmlWord( bestTranslation ) );
+            }
+            else
+            {
+
+                native_text.append( this->htmlWord( this->cascadeHtmlSpace( wordLength ) ));
+            }
         }
         else
         {
-            text.append( word.getContent() );
+            if( word.getContent().contains( "\n" ) )
+            {
+                foreign_text.append( '\n' );
+                native_text.append( '\n' );
+            }
+            else
+            {
+                foreign_text.append( this->maskHtml(' ') );
+                native_text.append( this->maskHtml(' ') );
+            }
         }
     }
 
-    return text;
-    // ---
+    return this->mergeLanguages( foreign_text, native_text );
 }
 
-QString MainWindow::maskHtml( const QChar &ch )
+QString MainWindow::mergeLanguages( const QString &foreignText, const QString &nativeText ) const
+{
+    const QStringList foreignText_lines = foreignText.split( '\n' );
+    const QStringList nativeText_lines = nativeText.split( '\n' );
+
+    if( foreignText_lines.size() != nativeText_lines.size() )
+        throw "Size mismatch";
+
+    QString text;
+
+    for( int i=0; i<foreignText_lines.size(); ++i )
+    {
+        text.append( foreignText_lines.at(i) );
+        text.append( this->maskHtml( '\n' ) );
+        text.append( nativeText_lines.at(i) );
+        text.append( this->maskHtml( '\n' ) );
+    }
+
+    return text;
+}
+
+QString MainWindow::maskHtml( const QChar &ch ) const
 {
     if( ch == '\t' )
     {
@@ -253,24 +342,14 @@ QString MainWindow::maskHtml( const QChar &ch )
     }
 }
 
-QString MainWindow::colorizeWord( QString foreignWord )
+QString MainWindow::colorizeWord( QString foreignWord, const bool isTranslated )
 {
     if( foreignWord.isEmpty() )
     {
         return "";
     }
 
-    const QString foreignLangTag{ this->ui->comboBox_langs->currentText().toLower() };
-    const QString nativeLangTag{ this->getNativeLang().toLower() };
-
-    // get lang ids
-    int foreignLangId = this->dbManager->getLangId( foreignLangTag );
-    int nativeLangId = this->dbManager->getLangId( nativeLangTag );
-
-    // check if word is known -> Database
-    bool isKnownWord = this->dbManager->isTranslatedWord( foreignWord, foreignLangId );
-
-    if( isKnownWord )
+    if( isTranslated )
     {
         ++this->knownWords;
     }
@@ -279,12 +358,13 @@ QString MainWindow::colorizeWord( QString foreignWord )
         ++this->unknownWords;
     }
 
-    // escape brackets <..>
-    foreignWord = foreignWord.toHtmlEscaped();
+    return htmlWord( foreignWord, ((isTranslated) ? "#37e790;" : "red;") );
+}
 
+QString MainWindow::htmlWord( QString word, const QString &styleColor ) const
+{
     return QString( "<span style=color:%1>%2</span>" ).
-            arg( ((isKnownWord) ? "#37e790;" : "red;") ).
-            arg( foreignWord );
+            arg( styleColor ).arg( word );
 }
 
 void MainWindow::onDoubleClicked()
@@ -298,14 +378,32 @@ void MainWindow::onDoubleClicked()
     {
         this->resetStatistic();
 
+        const QString foreignLangTag = this->ui->comboBox_langs->currentText();
+        const QString nativeLangTag = this->getNativeLang();
+
         TranslationDialog *dialog = new TranslationDialog{ this, this->dbManager };
 
         dialog->setUnknownWordLabelText( doubleClickedWord );
         dialog->updateUnknownWordTitle( this->ui->comboBox_langs->currentText() );
-        dialog->updateTranslateToLangTitle( this->getNativeLang() );
+        dialog->updateTranslateToLangTitle( nativeLangTag );
 
-        dialog->setForeignLangId( this->dbManager->getLangId( this->ui->comboBox_langs->currentText().toLower() ) );
-        dialog->setNativeLangId( this->dbManager->getLangId( this->getNativeLang().toLower() ) );
+        const int foreignLangID = this->dbManager->getLangId( foreignLangTag.toLower() );
+        const int nativeLangID = this->dbManager->getLangId( nativeLangTag.toLower() );
+
+        dialog->setForeignLangId( foreignLangID );
+        dialog->setNativeLangId( nativeLangID );
+
+        const QVector<QString> words = this->dbManager->getTanslations( doubleClickedWord, foreignLangID,  nativeLangID );
+
+        QVector<std::pair<QString,int>> word_pairs;
+
+        for( const QString &word : words )
+        {
+            const int wordID = this->dbManager->getWordId( word, nativeLangID );
+            word_pairs.push_back( std::make_pair(word, wordID) );
+        }
+
+        dialog->fillTranslationTable( word_pairs );
 
         dialog->exec();
 
@@ -331,20 +429,6 @@ void MainWindow::on_comboBox_langs_currentTextChanged( const QString &section )
     {
         this->ui->pushButton_analyse->setEnabled( true );
     }
-}
-
-void MainWindow::on_textEdit_textChanged()
-{
-    /*
-    if( !this->analysed )
-    {
-        this->resetHighlighting();
-    }
-    else
-    {
-        this->analysed = false;
-    }
-    */
 }
 
 void MainWindow::resetHighlighting()
@@ -382,7 +466,12 @@ void MainWindow::on_pushButton_edit_clicked()
 
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
-    this->ui->pushButton_analyse->setEnabled( true );
+    this->ui->pushButton_analyse->setEnabled( false );
 
     this->ui->pushButton_edit->setEnabled( false );
+}
+
+void MainWindow::on_action_Settings_triggered()
+{
+
 }
