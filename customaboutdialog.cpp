@@ -19,6 +19,10 @@ namespace CustomAboutDialog
                               ? contents[AboutSection::VERSION]
                               : "";
 
+        const QString revision = ( contents.contains(AboutSection::REVISION) )
+                              ? contents[AboutSection::REVISION]
+                              : "";
+
         const QString date = ( contents.contains(AboutSection::DATE) )
                               ? contents[AboutSection::DATE]
                               : "";
@@ -67,6 +71,10 @@ namespace CustomAboutDialog
 
         content = ( !version.isEmpty() )     // VERSION
               ? "" + version + ""
+              : "";
+
+        content += ( !revision.isEmpty() )     // REVISION
+              ? "<br>Revision: " + revision + ""
               : "";
 
         if( !date.isEmpty() )

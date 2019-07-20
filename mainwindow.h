@@ -19,6 +19,9 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    static QString normalizeVersion( const QString &version );
+    static QString revision( const QString &version );
+
     explicit MainWindow( QWidget *parent = nullptr );
     ~MainWindow() override;
 

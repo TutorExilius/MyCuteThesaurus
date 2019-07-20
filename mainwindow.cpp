@@ -17,6 +17,16 @@
 #include "translationdialog.h"
 #include "settingdialog.h"
 
+QString MainWindow::normalizeVersion( const QString &version )
+{
+    return version.mid( 0, version.lastIndexOf( '-' ) );
+}
+
+QString MainWindow::revision( const QString &version )
+{
+    return version.mid( version.lastIndexOf( '-' ) + 1 );
+}
+
 MainWindow::MainWindow( QWidget *parent )
 : QMainWindow{ parent }
 , ui{ new Ui::MainWindow }
@@ -85,7 +95,8 @@ void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
 
     QMap<AboutSection,QString> contents{
         { AboutSection::TITLE, "About My Cute Thesaurus" },
-        { AboutSection::VERSION, version.mid( 0, version.size() - 9 ) }, // "v0.1.0 Beta" },
+        { AboutSection::VERSION, MainWindow::normalizeVersion(version) }, // "v0.1-beta-1" },
+        { AboutSection::REVISION, MainWindow::revision(version) },
         { AboutSection::DATE, "20.07.2019" },
         { AboutSection::SHORT_INFO, "A Let's Try [Qt] project created on <a href=http://twitch.tv/tutorexilius>"
         "Twitch.tv/TutorExilius</a>." },

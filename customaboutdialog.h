@@ -11,6 +11,7 @@ enum class AboutSection
 {
     TITLE,
     VERSION,
+    REVISION,
     DATE,
     SHORT_INFO,
     DESCRIPTION,
