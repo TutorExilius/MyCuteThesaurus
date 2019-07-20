@@ -39,6 +39,12 @@
         <pointsize>10</pointsize>
        </font>
       </property>
+      <property name="lineWrapMode">
+       <enum>QTextEdit::NoWrap</enum>
+      </property>
+      <property name="lineWrapColumnOrWidth">
+       <number>0</number>
+      </property>
       <property name="readOnly">
        <bool>false</bool>
       </property>

@@ -160,3 +160,17 @@ void TranslationDialog::onItemChanged( QTableWidgetItem *item )
         this->db_manager->update( wordID, word );
     }
 }
+
+void TranslationDialog::on_lineEdit_translateToLang_textChanged( const QString &text )
+{
+    const QString _text{ text.trimmed() };
+
+    if( _text.size() > 0 )
+    {
+        this->ui->pushButton_add->setEnabled( true );
+    }
+    else
+    {
+        this->ui->pushButton_add->setEnabled( false );
+    }
+}

@@ -38,6 +38,8 @@ private slots:
     void on_pushButton_add_clicked();
     void onItemChanged( QTableWidgetItem *item );
 
+    void on_lineEdit_translateToLang_textChanged( const QString &text );
+
 private:
     void deleteItem( QTableWidgetItem *item );
 

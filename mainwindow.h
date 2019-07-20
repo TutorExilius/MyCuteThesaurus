@@ -39,6 +39,8 @@ private slots:
 
     void on_action_Settings_triggered();
 
+    void on_textEdit_textChanged();
+
 private:
     void fillComboBox();
     QString colorizeWord( QString foreignWord, const bool isTranslated );
@@ -51,6 +53,7 @@ private:
     QString htmlWord( QString word, const QString &styleColor = "black" ) const;
     QString cascadeHtmlSpace( const int count ) const;
     void restoreForeignText();
+    void analyse();
 
     Ui::MainWindow *ui;
     QVector<Word> foreign_words;
@@ -59,6 +62,7 @@ private:
     bool analysed;
     int knownWords;
     int unknownWords;
+    int monospaceCharactersWidth;
 };
 
 #endif // MAINWINDOW_H

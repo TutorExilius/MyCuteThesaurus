@@ -4,7 +4,10 @@
 #include <QDebug>
 #include <QMap>
 #include <QMessageBox>
-
+#include <QFont>
+#include <QFontMetrics>
+#include <QTextBlock>
+#include <QTextDocumentFragment>
 #include <algorithm>
 
 #include "word.h"
@@ -80,8 +83,8 @@ void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
 {
     QMap<AboutSection,QString> contents{
         { AboutSection::TITLE, "About My Cute Thesaurus" },
-        { AboutSection::VERSION, "v0.0.1 Beta" },
-        { AboutSection::DATE, "09.03.2019" },
+        { AboutSection::VERSION, QString("%1").arg(GIT_VERSION) }, // "v0.1.0 Beta" },
+        { AboutSection::DATE, "20.07.2019" },
         { AboutSection::SHORT_INFO, "A Let's Try [Qt] project created on <a href=http://twitch.tv/tutorexilius>"
         "Twitch.tv/TutorExilius</a>." },
         { AboutSection::DESCRIPTION, "Description here..."},
@@ -94,16 +97,9 @@ void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
     CustomAboutDialog::about( this, contents );
 }
 
-void MainWindow::on_pushButton_analyse_clicked()
+void MainWindow::analyse()
 {
-    this->ui->textEdit->setReadOnly( true );
-    this->ui->comboBox_langs->setEnabled( false );
-    this->ui->pushButton_analyse->setEnabled( false );
-    this->ui->pushButton_edit->setEnabled( true );
-
     QVector<Word> tmp_foreign_words;
-    const QString selectedLang{ this->ui->comboBox_langs->currentText() };
-
     const QString text{ this->ui->textEdit->toPlainText() };
 
     // build word
@@ -156,10 +152,21 @@ void MainWindow::on_pushButton_analyse_clicked()
 
     // reorganise std::vector<std::list> native_words / foreign_words;
     this->buildTranslationStructure( tmp_foreign_words );
+}
+
+void MainWindow::on_pushButton_analyse_clicked()
+{
+    this->ui->textEdit->setReadOnly( true );
+    this->ui->comboBox_langs->setEnabled( false );
+    this->ui->pushButton_analyse->setEnabled( false );
+    this->ui->pushButton_edit->setEnabled( true );
+
+    const QString selectedLang{ this->ui->comboBox_langs->currentText() };
+
+    this->analyse();
 
     // clear current textEdit-content and reset cursors position to 0
     this->ui->textEdit->clear();
-
 
     const QString newContent = this->newText();
 
@@ -245,7 +252,7 @@ QString MainWindow::newText()
 
                 if( bestTranslation.size() < wordLength )
                 {
-                    bestTranslation.resize( wordLength );
+                    bestTranslation.append( this->cascadeHtmlSpace( wordLength - bestTranslation.size() ) );
                 }
                 else
                 {
@@ -256,7 +263,6 @@ QString MainWindow::newText()
             }
             else
             {
-
                 native_text.append( this->htmlWord( this->cascadeHtmlSpace( wordLength ) ));
             }
         }
@@ -347,9 +353,18 @@ QString MainWindow::htmlWord( QString word, const QString &styleColor ) const
 void MainWindow::onDoubleClicked()
 {
     if( !this->analysed )
+    {
         return;
+    }
 
-    const QString doubleClickedWord{ this->ui->textEdit->textCursor().selectedText() };
+    const QString nativeWordBlackColored = this->ui->textEdit->textCursor().selection().toHtml();
+
+    if( nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#000000;\">") )
+    {
+        return;
+    }
+
+    const QString doubleClickedWord{ this->ui->textEdit->textCursor().selectedText().trimmed() };
 
     if( !doubleClickedWord.isEmpty() )
     {
@@ -465,4 +480,8 @@ void MainWindow::on_action_Settings_triggered()
 {
     SettingDialog *dialog = new SettingDialog{ this, this->dbManager };
     dialog->exec();
+}
+
+void MainWindow::on_textEdit_textChanged()
+{
 }
