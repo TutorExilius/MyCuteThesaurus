@@ -81,9 +81,11 @@ void MainWindow::on_action_Exit_triggered()
 
 void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
 {
+    QString version = QString("%1").arg(GIT_VERSION);
+
     QMap<AboutSection,QString> contents{
         { AboutSection::TITLE, "About My Cute Thesaurus" },
-        { AboutSection::VERSION, QString("%1").arg(GIT_VERSION) }, // "v0.1.0 Beta" },
+        { AboutSection::VERSION, version.mid( 0, version.size() - 9 ) }, // "v0.1.0 Beta" },
         { AboutSection::DATE, "20.07.2019" },
         { AboutSection::SHORT_INFO, "A Let's Try [Qt] project created on <a href=http://twitch.tv/tutorexilius>"
         "Twitch.tv/TutorExilius</a>." },
