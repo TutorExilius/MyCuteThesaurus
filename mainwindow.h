@@ -25,9 +25,6 @@ public:
     QString getSelectedText() const;
     QString getNativeLang() const;
 
-public slots:
-    void onDbConnectionTimeOut();
-
 private slots:
     void onDoubleClicked();
 
@@ -59,7 +56,6 @@ private:
     QVector<Word> foreign_words;
 
     DB_Manager *dbManager;
-    QTimer *dbConnectionCheckTimer;
     bool analysed;
     int knownWords;
     int unknownWords;

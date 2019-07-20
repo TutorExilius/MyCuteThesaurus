@@ -18,7 +18,6 @@ MainWindow::MainWindow( QWidget *parent )
 : QMainWindow{ parent }
 , ui{ new Ui::MainWindow }
 , dbManager{ nullptr }
-, dbConnectionCheckTimer{ nullptr }
 , analysed{ false }
 , knownWords{ 0 }
 , unknownWords{ 0 }
@@ -29,17 +28,16 @@ MainWindow::MainWindow( QWidget *parent )
 
     this->ui->statusBar->showMessage( "Current native language: " + this->dbManager->getCurrentNativeLang() );
 
-    this->dbConnectionCheckTimer = new QTimer{ this };
-
-    QObject::connect( this->dbConnectionCheckTimer, &QTimer::timeout,
-                      this, &MainWindow::onDbConnectionTimeOut,
-                      Qt::UniqueConnection );
-
     QObject::connect( this->ui->textEdit, &MyTextEdit::doubleClicked,
                       this, &MainWindow::onDoubleClicked,
                       Qt::UniqueConnection );
 
-    dbConnectionCheckTimer->start( 1000 );
+    this->fillComboBox();
+
+    // Set Checkbox-Lang in Control-Panel to ForeignLang set in Settings ---
+    const QString currentForeignLang{ this->dbManager->getCurrentForeignLang() };
+    this->ui->comboBox_langs->setCurrentText( currentForeignLang.toUpper() );
+    // ---
 }
 
 MainWindow::~MainWindow()
@@ -55,24 +53,6 @@ QString MainWindow::getSelectedText() const
 QString MainWindow::getNativeLang() const
 {
     return this->dbManager->getCurrentNativeLang();
-}
-
-void MainWindow::onDbConnectionTimeOut()
-{
-    if( !this->dbManager->isOk() )
-    {
-        ::logInfo( "Close application causing of db connection failure." );
-        this->close();
-    }
-    else
-    {
-        this->dbConnectionCheckTimer->stop();
-
-        QObject::disconnect( this->dbConnectionCheckTimer, &QTimer::timeout,
-                             this, &MainWindow::onDbConnectionTimeOut );
-
-        this->fillComboBox();
-    }
 }
 
 void MainWindow::fillComboBox()
@@ -182,10 +162,6 @@ void MainWindow::on_pushButton_analyse_clicked()
 
 
     const QString newContent = this->newText();
-
-    // ??? why ??? this->ui->comboBox_langs->setCurrentText( selectedLang );
-
-
 
     // recalculate statistics
     int sum = this->knownWords + this->unknownWords;
@@ -436,7 +412,7 @@ void MainWindow::on_comboBox_langs_currentTextChanged( const QString &section )
 void MainWindow::resetHighlighting()
 {
     // qDebug() << "TEXTCHANGED";
-    this->ui->comboBox_langs->setCurrentText( "Select Language:" );
+    // this->ui->comboBox_langs->setCurrentText( "Select Language:" );
 
     const QString redStyleText{ "<span style=\" color:#ff0000" };
     const QString greenStyleText{ "<span style=\" color:#37e790" };
@@ -481,8 +457,7 @@ void MainWindow::on_pushButton_edit_clicked()
 
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
-    this->ui->pushButton_analyse->setEnabled( false );
-
+    this->ui->pushButton_analyse->setEnabled( true );
     this->ui->pushButton_edit->setEnabled( false );
 }
 
