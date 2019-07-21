@@ -194,8 +194,6 @@ void MainWindow::switchMode()
 
 void MainWindow::on_pushButton_analyse_clicked()
 {
-    this->switchMode();
-
     this->ui->textEdit->setReadOnly( true );
     this->ui->comboBox_langs->setEnabled( false );
     this->ui->pushButton_analyse->setEnabled( false );
@@ -230,6 +228,11 @@ void MainWindow::on_pushButton_analyse_clicked()
     this->ui->textEdit->setHtml( newContent );
     this->ui->label_statistics->setText( statistics );
     this->ui->comboBox_langs->setCurrentText( selectedLang );
+
+    if( this->mode != Mode::TRANSLATE_MODE )
+    {
+        this->switchMode();
+    }
 }
 
 void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
@@ -340,6 +343,13 @@ QString MainWindow::mergeLanguages( const QString &foreignText, const QString &n
         text.append( this->maskHtml( '\n' ) );
         text.append( nativeText_lines.at(i) );
         text.append( this->maskHtml( '\n' ) );
+
+        if( i != foreignText_lines.size()-1 )
+        {
+            // extra empty line
+            //text.append( this->maskHtml( '\n' ) );
+            text.append( "<span style=\"color: #b5b5b5;\">⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯</span><br>");
+        }
     }
 
     return text;
@@ -399,7 +409,8 @@ void MainWindow::onDoubleClicked()
 
     const QString nativeWordBlackColored = this->ui->textEdit->textCursor().selection().toHtml();
 
-    if( nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#000000;\">") )
+    if( nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#000000;\">")
+        || nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#b5b5b5;\">") )
     {
         return;
     }
@@ -439,7 +450,7 @@ void MainWindow::onDoubleClicked()
 
         dialog->exec();
 
-        this->restoreForeignText();
+        this->ui->textEdit->setText( this->restoreForeignText() );
         this->on_pushButton_analyse_clicked();
     }
 }
@@ -556,8 +567,6 @@ void MainWindow::loadFromFile()
 
 void MainWindow::on_pushButton_edit_clicked()
 {
-    this->switchMode();
-
     this->resetHighlighting();
 
     this->ui->textEdit->setText( this->restoreForeignText() );
@@ -566,6 +575,8 @@ void MainWindow::on_pushButton_edit_clicked()
     this->ui->comboBox_langs->setEnabled( true );
     this->ui->pushButton_analyse->setEnabled( true );
     this->ui->pushButton_edit->setEnabled( false );
+
+    this->switchMode();
 }
 
 void MainWindow::on_action_Settings_triggered()
