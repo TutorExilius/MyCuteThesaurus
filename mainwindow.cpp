@@ -2,12 +2,15 @@
 #include "ui_mainwindow.h"
 
 #include <QDebug>
+#include <QApplication>
+#include <QFileDialog>
 #include <QMap>
 #include <QMessageBox>
 #include <QFont>
 #include <QFontMetrics>
 #include <QTextBlock>
 #include <QTextDocumentFragment>
+
 #include <algorithm>
 
 #include "word.h"
@@ -34,6 +37,9 @@ MainWindow::MainWindow( QWidget *parent )
 , analysed{ false }
 , knownWords{ 0 }
 , unknownWords{ 0 }
+, fileChangeWatcher{ nullptr }
+, openFileChangedFromExtern{ false }
+, mode{ Mode::EDIT_MODE }
 {
     this->ui->setupUi( this );
 
@@ -77,6 +83,11 @@ void MainWindow::fillComboBox()
     {
         this->ui->comboBox_langs->addItem( lang.toUpper() );
     }
+}
+
+void MainWindow::onOpenFileChanged()
+{
+    this->openFileChangedFromExtern = true;
 }
 
 void MainWindow::on_actionAbout_Qt_triggered()
@@ -167,8 +178,24 @@ void MainWindow::analyse()
     this->buildTranslationStructure( tmp_foreign_words );
 }
 
+void MainWindow::switchMode()
+{
+    if( this->mode == Mode::TRANSLATE_MODE )
+    {
+        this->ui->action_Save->setEnabled( true );
+        this->mode = Mode::EDIT_MODE;
+    }
+    else
+    {
+        this->ui->action_Save->setEnabled( false );
+        this->mode = Mode::TRANSLATE_MODE;
+    }
+}
+
 void MainWindow::on_pushButton_analyse_clicked()
 {
+    this->switchMode();
+
     this->ui->textEdit->setReadOnly( true );
     this->ui->comboBox_langs->setEnabled( false );
     this->ui->pushButton_analyse->setEnabled( false );
@@ -465,7 +492,7 @@ void MainWindow::resetHighlighting()
     this->resetStatistic();
 }
 
-void MainWindow::restoreForeignText()
+QString MainWindow::restoreForeignText() const
 {
     QString foreignText;
 
@@ -474,14 +501,66 @@ void MainWindow::restoreForeignText()
         foreignText.append( word.getContent() );
     }
 
-    this->ui->textEdit->setText( foreignText );
+    return foreignText;
+}
+
+void MainWindow::reset()
+{
+    this->resetStatistic();
+    this->resetHighlighting();
+
+    this->ui->textEdit->setReadOnly( false );
+    this->ui->comboBox_langs->setEnabled( true );
+    this->ui->pushButton_analyse->setEnabled( true );
+    this->ui->pushButton_edit->setEnabled( false );
+}
+
+void MainWindow::loadFromFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(
+        this, tr("Open Text File"), "", tr("Text File (*.txt)") );
+
+    if( fileName.isEmpty() )
+    {
+        return;
+    }
+
+    qDebug() << "Selected File: " << fileName;
+
+    QFile f( fileName );
+    f.open( QFile::ReadOnly | QFile::Text );
+
+    QTextStream fileStream( &f );
+    this->ui->textEdit->setText( fileStream.readAll() );
+
+    this->reset();
+
+    if( this->fileChangeWatcher == nullptr )
+    {
+        this->fileChangeWatcher = new QFileSystemWatcher( QApplication::instance() );
+
+        QObject::connect( this->fileChangeWatcher, &QFileSystemWatcher::fileChanged,
+                          this, &MainWindow::onOpenFileChanged,
+                          Qt::UniqueConnection );
+    }
+    else
+    {
+        this->fileChangeWatcher->removePath( this->openedFileName );
+    }
+
+    this->openedFileName = fileName;
+
+    this->fileChangeWatcher->addPath( this->openedFileName );
+    this->ui->action_Save->setEnabled( true );
 }
 
 void MainWindow::on_pushButton_edit_clicked()
 {
+    this->switchMode();
+
     this->resetHighlighting();
 
-    this->restoreForeignText();
+    this->ui->textEdit->setText( this->restoreForeignText() );
 
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
@@ -497,4 +576,52 @@ void MainWindow::on_action_Settings_triggered()
 
 void MainWindow::on_textEdit_textChanged()
 {
+}
+
+void MainWindow::on_action_Open_triggered()
+{
+    this->loadFromFile();
+}
+
+void MainWindow::on_action_Save_triggered()
+{
+    if( this->openedFileName.isEmpty() || this->mode == Mode::TRANSLATE_MODE )
+    {
+        return;
+    }
+
+    bool overrideFile = true;
+
+    if( this->openFileChangedFromExtern )
+    {
+        if( QMessageBox::No == QMessageBox( QMessageBox::Warning,
+                                            "File changed",
+                                            "Current file is changed. Override file?",
+                                            QMessageBox::No|QMessageBox::Yes).exec() )
+        {
+            overrideFile = false;
+        }
+        else
+        {
+            overrideFile = true;
+        }
+    }
+
+    if( overrideFile )
+    {
+        this->fileChangeWatcher->removePath( this->openedFileName );
+
+        QFile f( this->openedFileName );
+        f.open( QFile::WriteOnly | QFile::Truncate | QFile::Text );
+
+        QTextStream fileStream( &f );
+        const QString content = this->ui->textEdit->toPlainText();
+
+        fileStream << content ;
+
+        f.close();
+
+        this->openFileChangedFromExtern = false;
+        this->fileChangeWatcher->addPath( this->openedFileName );
+    }
 }

@@ -6,6 +6,7 @@
 #include <QTableWidgetItem>
 #include <QVector>
 #include <QPair>
+#include <QFileSystemWatcher>
 
 #include "db_manager.h"
 #include "word.h"
@@ -19,6 +20,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum class Mode
+    {
+        EDIT_MODE,
+        TRANSLATE_MODE
+    };
+
     static QString normalizeVersion( const QString &version );
     static QString revision( const QString &version );
 
@@ -29,6 +36,7 @@ public:
     QString getNativeLang() const;
 
 private slots:
+    void onOpenFileChanged();
     void onDoubleClicked();
 
     void on_actionAbout_Qt_triggered();
@@ -44,6 +52,10 @@ private slots:
 
     void on_textEdit_textChanged();
 
+    void on_action_Open_triggered();
+
+    void on_action_Save_triggered();
+
 private:
     void fillComboBox();
     QString colorizeWord( QString foreignWord, const bool isTranslated );
@@ -55,8 +67,11 @@ private:
     QString mergeLanguages( const QString &foreignText, const QString &nativeText ) const;
     QString htmlWord( QString word, const QString &styleColor = "black" ) const;
     QString cascadeHtmlSpace( const int count ) const;
-    void restoreForeignText();
+    QString restoreForeignText() const;
     void analyse();
+    void loadFromFile();
+    void reset();
+    void switchMode();
 
     Ui::MainWindow *ui;
     QVector<Word> foreign_words;
@@ -66,6 +81,10 @@ private:
     int knownWords;
     int unknownWords;
     int monospaceCharactersWidth;
+    QString openedFileName;
+    QFileSystemWatcher *fileChangeWatcher;
+    bool openFileChangedFromExtern;
+    Mode mode;
 };
 
 #endif // MAINWINDOW_H
