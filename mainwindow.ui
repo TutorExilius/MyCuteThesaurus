@@ -183,6 +183,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="action_Open"/>
     <addaction name="separator"/>
     <addaction name="action_Save"/>
+    <addaction name="actionSave_As"/>
     <addaction name="separator"/>
     <addaction name="action_Settings"/>
     <addaction name="separator"/>
@@ -230,6 +231,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="actionSave_As">
+   <property name="text">
+    <string>Save &amp;As...</string>
    </property>
   </action>
  </widget>

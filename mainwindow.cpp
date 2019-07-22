@@ -37,7 +37,7 @@ MainWindow::MainWindow( QWidget *parent )
 , analysed{ false }
 , knownWords{ 0 }
 , unknownWords{ 0 }
-, fileChangeWatcher{ nullptr }
+, fileChangeWatcher{ new QFileSystemWatcher( QApplication::instance() ) }
 , openFileChangedFromExtern{ false }
 , mode{ Mode::EDIT_MODE }
 , textColors{ { TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR, "#32ab32" },
@@ -63,6 +63,10 @@ MainWindow::MainWindow( QWidget *parent )
     const QString currentForeignLang{ this->dbManager->getCurrentForeignLang() };
     this->ui->comboBox_langs->setCurrentText( currentForeignLang.toUpper() );
     // ---
+
+    QObject::connect( this->fileChangeWatcher, &QFileSystemWatcher::fileChanged,
+                      this, &MainWindow::onOpenFileChanged,
+                      Qt::UniqueConnection );
 }
 
 MainWindow::~MainWindow()
@@ -178,11 +182,13 @@ void MainWindow::switchMode()
     if( this->mode == Mode::TRANSLATE_MODE )
     {
         this->ui->action_Save->setEnabled( true );
+        this->ui->actionSave_As->setEnabled( true );
         this->mode = Mode::EDIT_MODE;
     }
     else
     {
         this->ui->action_Save->setEnabled( false );
+        this->ui->actionSave_As->setEnabled( false );
         this->mode = Mode::TRANSLATE_MODE;
     }
 }
@@ -575,6 +581,33 @@ void MainWindow::reset()
     this->ui->pushButton_edit->setEnabled( false );
 }
 
+void MainWindow::saveAsFile()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                "",
+                                tr("Text File (*.txt)"));
+
+    if( !fileName.isEmpty() )
+    {
+        if( !this->fileChangeWatcher->files().isEmpty() )
+        {
+            this->fileChangeWatcher->removePath( this->openedFileName );
+        }
+
+        this->openedFileName = fileName;
+
+        this->saveTo( this->openedFileName );
+
+        this->fileChangeWatcher->addPath( this->openedFileName );
+
+        this->ui->action_Save->setEnabled( true );
+    }
+    else
+    {
+        qDebug() << "Cancelled save as...";
+    }
+}
+
 void MainWindow::loadFromFile()
 {
     QString fileName = QFileDialog::getOpenFileName(
@@ -595,15 +628,7 @@ void MainWindow::loadFromFile()
 
     this->reset();
 
-    if( this->fileChangeWatcher == nullptr )
-    {
-        this->fileChangeWatcher = new QFileSystemWatcher( QApplication::instance() );
-
-        QObject::connect( this->fileChangeWatcher, &QFileSystemWatcher::fileChanged,
-                          this, &MainWindow::onOpenFileChanged,
-                          Qt::UniqueConnection );
-    }
-    else
+    if( !this->fileChangeWatcher->files().isEmpty() )
     {
         this->fileChangeWatcher->removePath( this->openedFileName );
     }
@@ -612,6 +637,19 @@ void MainWindow::loadFromFile()
 
     this->fileChangeWatcher->addPath( this->openedFileName );
     this->ui->action_Save->setEnabled( true );
+}
+
+void MainWindow::saveTo( const QString &fileName ) const
+{
+    QFile f( fileName );
+    f.open( QFile::WriteOnly | QFile::Truncate | QFile::Text );
+
+    QTextStream fileStream( &f );
+    const QString content = this->ui->textEdit->toPlainText();
+
+    fileStream << content ;
+
+    f.close();
 }
 
 void MainWindow::on_pushButton_edit_clicked()
@@ -671,17 +709,14 @@ void MainWindow::on_action_Save_triggered()
     {
         this->fileChangeWatcher->removePath( this->openedFileName );
 
-        QFile f( this->openedFileName );
-        f.open( QFile::WriteOnly | QFile::Truncate | QFile::Text );
-
-        QTextStream fileStream( &f );
-        const QString content = this->ui->textEdit->toPlainText();
-
-        fileStream << content ;
-
-        f.close();
+        this->saveTo( this->openedFileName );
 
         this->openFileChangedFromExtern = false;
         this->fileChangeWatcher->addPath( this->openedFileName );
     }
+}
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    this->saveAsFile();
 }

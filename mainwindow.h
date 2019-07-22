@@ -72,7 +72,10 @@ private slots:
 
     void on_action_Save_triggered();
 
+    void on_actionSave_As_triggered();
+
 private:
+    void initialiseFileChangeWatcher();
     void fillComboBox();
     QString colorizeWord( QString foreignWord, const bool isTranslated );
     QString maskHtml( const QChar &ch ) const;
@@ -87,7 +90,9 @@ private:
     QString cascadeHtmlSpace( const int count ) const;
     QString restoreForeignText() const;
     void analyse();
+    void saveAsFile();
     void loadFromFile();
+    void saveTo( const QString &fileName ) const;
     void reset();
     void switchMode();
 
