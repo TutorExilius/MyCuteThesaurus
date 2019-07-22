@@ -5,11 +5,15 @@
 #include <QTimer>
 #include <QTableWidgetItem>
 #include <QVector>
+#include <QMap>
 #include <QPair>
 #include <QFileSystemWatcher>
 
 #include "db_manager.h"
 #include "word.h"
+
+// Forward-Declarations
+class TranslationDialog;
 
 namespace Ui {
     class MainWindow;
@@ -26,6 +30,16 @@ public:
         TRANSLATE_MODE
     };
 
+    enum class TextTypeColor
+    {
+        FOREIGN_TEXT_KNOWN_COLOR,
+        FOREIGN_TEXT_UNKNOWN_COLOR,
+        NATIVE_TEXT_COLOR,
+        STATISTIC_KNOWN_WORDS_COLOR,
+        STATISTIC_UNKNOWN_WORDS_COLOR,
+        HORIZONTAL_LINE_COLOR
+    };
+
     static QString normalizeVersion( const QString &version );
     static QString revision( const QString &version );
 
@@ -36,6 +50,8 @@ public:
     QString getNativeLang() const;
 
 private slots:
+    void onTranslationAdded();
+
     void onOpenFileChanged();
     void onDoubleClicked();
 
@@ -87,6 +103,7 @@ private:
     QFileSystemWatcher *fileChangeWatcher;
     bool openFileChangedFromExtern;
     Mode mode;
+    QMap<TextTypeColor, QString> textColors;
 };
 
 #endif // MAINWINDOW_H

@@ -59,7 +59,7 @@ void TranslationDialog::fillTranslationTable( const QVector<std::pair<QString,in
 {
     if( list.empty() )
     {
-        this->ui->tableWidget_translations->setVisible( false );
+     //   this->ui->tableWidget_translations->setVisible( false );
         return;
     }
 
@@ -108,8 +108,9 @@ void TranslationDialog::deleteItem( QTableWidgetItem *item )
 
     if( ok )
     {
-        this->db_manager->remove( wordID );
+        this->toDeleteRowEntries.push_back( wordID );
         this->ui->tableWidget_translations->removeRow( item->row() );
+        this->ui->pushButton_ok->setEnabled( true );
     }
 }
 
@@ -130,8 +131,14 @@ void TranslationDialog::updateTranslateToLangTitle( const QString &lang )
           QString( "Translate word (%1):").arg( lang ) );
 }
 
-void TranslationDialog::on_pushButton_add_clicked()
+void TranslationDialog::on_pushButton_ok_clicked()
 {
+    // delete removed Words from DB
+    for( int wordID :this->toDeleteRowEntries )
+    {
+        this->db_manager->remove( wordID );
+    }
+
     const QString foreignWord{ this->ui->label_word->text() };
     const QString nativeWord{ this->ui->lineEdit_translateToLang->text() };
 
@@ -142,6 +149,8 @@ void TranslationDialog::on_pushButton_add_clicked()
     // translate from native to foreign
     this->db_manager->translate( foreignWord, this->foreignLangId,
                                  nativeWord, this->nativeLangId );
+
+    emit translationAdded();
 
     this->close();
 }
@@ -167,10 +176,10 @@ void TranslationDialog::on_lineEdit_translateToLang_textChanged( const QString &
 
     if( _text.size() > 0 )
     {
-        this->ui->pushButton_add->setEnabled( true );
+        this->ui->pushButton_ok->setEnabled( true );
     }
     else
     {
-        this->ui->pushButton_add->setEnabled( false );
+        this->ui->pushButton_ok->setEnabled( false );
     }
 }

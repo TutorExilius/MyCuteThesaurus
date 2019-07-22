@@ -35,10 +35,13 @@ protected:
     void keyPressEvent(QKeyEvent * e) override;
 
 private slots:
-    void on_pushButton_add_clicked();
+    void on_pushButton_ok_clicked();
     void onItemChanged( QTableWidgetItem *item );
 
     void on_lineEdit_translateToLang_textChanged( const QString &text );
+
+signals:
+    void translationAdded();
 
 private:
     void deleteItem( QTableWidgetItem *item );
@@ -47,6 +50,7 @@ private:
     int foreignLangId;
     int nativeLangId;
     DB_Manager *db_manager;
+    QVector<int> toDeleteRowEntries;
 };
 
 #endif // TRANSLATIONDIALOG_H

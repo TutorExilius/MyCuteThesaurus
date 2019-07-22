@@ -40,6 +40,12 @@ MainWindow::MainWindow( QWidget *parent )
 , fileChangeWatcher{ nullptr }
 , openFileChangedFromExtern{ false }
 , mode{ Mode::EDIT_MODE }
+, textColors{ { TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR, "#32ab32" },
+              { TextTypeColor::FOREIGN_TEXT_UNKNOWN_COLOR, "#ff0000" },
+              { TextTypeColor::NATIVE_TEXT_COLOR, "#000000" },
+              { TextTypeColor::STATISTIC_KNOWN_WORDS_COLOR, "#32ab32" },
+              { TextTypeColor::STATISTIC_UNKNOWN_WORDS_COLOR, "#ff0000" },
+              { TextTypeColor::HORIZONTAL_LINE_COLOR, "#bcbcbc" } }
 {
     this->ui->setupUi( this );
 
@@ -130,37 +136,27 @@ void MainWindow::analyse()
     QString word;
     QString link;
 
-    //bool foreignLine = true;
-
     for( const QChar &ch : text )
     {
-        //if( foreignLine )
+        if( !ch.isSpace() )
         {
-            if( !ch.isSpace() )
+            if( !link.isEmpty() )
             {
-                if( !link.isEmpty() )
-                {
-                    tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
-                    link.clear();
-                }
-
-                word.append( ch );
+                tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
+                link.clear();
             }
-            else
-            {
-                if( !word.isEmpty() )
-                {
-                    tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
-                    word.clear();
-                }
 
-                link.append( ch );
-            }
+            word.append( ch );
         }
-
-        if( ch == QChar{'\n'} )
+        else
         {
-       //     foreignLine = !foreignLine;
+            if( !word.isEmpty() )
+            {
+                tmp_foreign_words.push_back( Word{ word, TYPE::WORD } );
+                word.clear();
+            }
+
+            link.append( ch );
         }
     }
 
@@ -174,7 +170,6 @@ void MainWindow::analyse()
         tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
     }
 
-    // reorganise std::vector<std::list> native_words / foreign_words;
     this->buildTranslationStructure( tmp_foreign_words );
 }
 
@@ -215,12 +210,14 @@ void MainWindow::on_pushButton_analyse_clicked()
     double unknownPerc = ( sum > 0 ) ? this->unknownWords * 100.0 / sum : 0.0;
 
     const QString statistics{
-        QString{ "%1 Words: Known %2 <span style=\"color: green;\">(%3%)</span> "
-                 "Unknown %4 <span style=\"color: red;\">(%5%)</span>" }
+        QString{ "%1 Words: Known %2 <span style=\"color: %3;\">(%4%)</span> "
+                 "Unknown %5 <span style=\"color: %6;\">(%7%)</span>" }
                  .arg( sum )
                  .arg( this->knownWords )
+                 .arg( this->textColors[TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR] )
                  .arg( knownPerc, 0, 'f', 2 )
                  .arg( this->unknownWords )
+                 .arg( this->textColors[TextTypeColor::FOREIGN_TEXT_UNKNOWN_COLOR] )
                  .arg( unknownPerc, 0, 'f', 2 )
     };
 
@@ -274,9 +271,6 @@ QString MainWindow::cascadeHtmlSpace( const int count ) const
 
 QString MainWindow::newText()
 {
-    // TODO erweiter words bzw translations an die wordbreite (nachfüllen mit leerzeichen)
-    // this->updateWordWidth( this->foreign_words  );
-
     QString foreign_text;
     QString native_text;
 
@@ -377,23 +371,20 @@ QString MainWindow::mergeLanguages( const QString &foreignText,
 
     QString text;
 
-    //text.append( "<table width=\"100%\">" );
-
     for( int i=0; i<foreignText_lines.size(); ++i )
     {
         text.append( foreignText_lines.at(i) );
         text.append( this->maskHtml( '\n' ) );
 
         text.append( nativeText_lines.at(i) );
-        //text.append( this->maskHtml( '\n' ) );
 
         if( i != foreignText_lines.size()-1 )
         {
-            text.append( "<br>" + extraLine + "<br>" );
+            text.append( QString{"<br><span style=\"color:%1\">%2</span><br>"}
+                         .arg( this->textColors[TextTypeColor::HORIZONTAL_LINE_COLOR] )
+                         .arg( extraLine ) );
         }
     }
-
-    //text.append( "</table>" );
 
     return text;
 }
@@ -434,7 +425,9 @@ QString MainWindow::colorizeWord( QString foreignWord, const bool isTranslated )
         ++this->unknownWords;
     }
 
-    return htmlWord( foreignWord, ((isTranslated) ? "#37e790;" : "red;") );
+    return htmlWord( foreignWord, ((isTranslated)
+                                   ? this->textColors[TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR]
+                                   : this->textColors[TextTypeColor::FOREIGN_TEXT_UNKNOWN_COLOR] ) );
 }
 
 QString MainWindow::htmlWord( QString word, const QString &styleColor ) const
@@ -450,10 +443,14 @@ void MainWindow::onDoubleClicked()
         return;
     }
 
-    const QString nativeWordBlackColored = this->ui->textEdit->textCursor().selection().toHtml();
+    const QString doubleClickedWord_html = this->ui->textEdit->textCursor().selection().toHtml();
 
-    if( nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#000000;\">")
-        || nativeWordBlackColored.contains("<!--StartFragment--><span style=\" color:#b5b5b5;\">") )
+    if( doubleClickedWord_html.contains(
+          QString{"<!--StartFragment--><span style=\" color:%1;\">"}
+            .arg( this->textColors[TextTypeColor::NATIVE_TEXT_COLOR] ) )
+        || doubleClickedWord_html.contains(
+          QString{"<!--StartFragment--><span style=\" color:%1;\">"}
+            .arg( this->textColors[TextTypeColor::HORIZONTAL_LINE_COLOR] ) ) )
     {
         return;
     }
@@ -465,17 +462,17 @@ void MainWindow::onDoubleClicked()
         const QString foreignLangTag = this->ui->comboBox_langs->currentText();
         const QString nativeLangTag = this->getNativeLang();
 
-        TranslationDialog *dialog = new TranslationDialog{ this, this->dbManager };
+        TranslationDialog *translationDialog = new TranslationDialog{ this, this->dbManager };
 
-        dialog->setUnknownWordLabelText( doubleClickedWord );
-        dialog->updateUnknownWordTitle( this->ui->comboBox_langs->currentText() );
-        dialog->updateTranslateToLangTitle( nativeLangTag );
+        translationDialog->setUnknownWordLabelText( doubleClickedWord );
+        translationDialog->updateUnknownWordTitle( this->ui->comboBox_langs->currentText() );
+        translationDialog->updateTranslateToLangTitle( nativeLangTag );
 
         const int foreignLangID = this->dbManager->getLangId( foreignLangTag.toLower() );
         const int nativeLangID = this->dbManager->getLangId( nativeLangTag.toLower() );
 
-        dialog->setForeignLangId( foreignLangID );
-        dialog->setNativeLangId( nativeLangID );
+        translationDialog->setForeignLangId( foreignLangID );
+        translationDialog->setNativeLangId( nativeLangID );
 
         const QVector<QString> words = this->dbManager->getTanslations( doubleClickedWord, foreignLangID,  nativeLangID );
 
@@ -487,19 +484,22 @@ void MainWindow::onDoubleClicked()
             word_pairs.push_back( std::make_pair(word, wordID) );
         }
 
-        dialog->fillTranslationTable( word_pairs );
+        translationDialog->fillTranslationTable( word_pairs );
 
-        int dialogCode = dialog->exec();
+        QObject::connect( translationDialog, &TranslationDialog::translationAdded,
+                          this, &MainWindow::onTranslationAdded,
+                          Qt::UniqueConnection );
 
-        // act on dialog return code
-        if( dialogCode == QDialog::Accepted )
-        {
-            this->resetStatistic();
-
-            this->ui->textEdit->setText( this->restoreForeignText() );
-            this->on_pushButton_analyse_clicked();
-        }
+        translationDialog->exec();
     }
+}
+
+void MainWindow::onTranslationAdded()
+{
+    this->resetStatistic();
+
+    this->ui->textEdit->setText( this->restoreForeignText() );
+    this->on_pushButton_analyse_clicked();
 }
 
 void MainWindow::resetStatistic()
@@ -524,17 +524,19 @@ void MainWindow::on_comboBox_langs_currentTextChanged( const QString &section )
 
 void MainWindow::resetHighlighting()
 {
-    // qDebug() << "TEXTCHANGED";
-    // this->ui->comboBox_langs->setCurrentText( "Select Language:" );
-
-    const QString redStyleText{ "<span style=\" color:#ff0000" };
-    const QString greenStyleText{ "<span style=\" color:#37e790" };
-    const QString blackStyleText{ "<span style=\" color:#000000" };
-
+    const QString unknownWordStyleText{
+        QString{"<span style=\" color:%1\">" }
+        .arg( this->textColors[TextTypeColor::FOREIGN_TEXT_UNKNOWN_COLOR] ) };
+    const QString knownWordStyleText{
+        QString{"<span style=\" color:%1\">" }
+        .arg( this->textColors[TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR] ) };
+    const QString nativeWordStyleText{
+        QString{"<span style=\" color:%1\">" }
+        .arg( this->textColors[TextTypeColor::NATIVE_TEXT_COLOR] ) };
 
     QString htmlText{ this->ui->textEdit->toHtml() };
-    htmlText.replace( redStyleText, blackStyleText );
-    htmlText.replace( greenStyleText, blackStyleText );
+    htmlText.replace( unknownWordStyleText, nativeWordStyleText );
+    htmlText.replace( knownWordStyleText, nativeWordStyleText );
 
     if( this->ui->textEdit->toHtml() != htmlText )
     {
