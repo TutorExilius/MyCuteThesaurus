@@ -24,6 +24,11 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
 
     const QString text = this->toPlainText();
 
+    if( text.isEmpty() )
+    {
+        return;
+    }
+
     int startPos = pos;
     int endPos = pos;
 

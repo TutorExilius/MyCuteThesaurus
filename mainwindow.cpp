@@ -280,25 +280,37 @@ QString MainWindow::newText()
     QString foreign_text;
     QString native_text;
 
+    QFont font{ this->ui->textEdit->font() };
+    QFontMetrics fm{ font };
+
+    int textEditViewWidth = 0;
+
+    QString cleanForeignTextLine;
+    QString cleanNativeTextLine;
+
     for( const Word &word : this->foreign_words )
     {
         const int wordLength = word.getContent().size();
         const QVector<QString> translations = word.getTranslations();
 
         if( word.isWordType() )
-        {
+        {   
+            cleanForeignTextLine.append( word.getContent() );
             foreign_text.append( this->colorizeWord( word.getContent(), word.hasTranslations() ) );
 
             if( !translations.isEmpty() )
             {
                 QString bestTranslation = translations.at( 0 );
+                cleanNativeTextLine.append( bestTranslation );
 
                 if( bestTranslation.size() < wordLength )
                 {
+                    cleanNativeTextLine.append( QString{ wordLength - bestTranslation.size(), ' ' } );
                     bestTranslation.append( this->cascadeHtmlSpace( wordLength - bestTranslation.size() ) );
                 }
                 else
-                {
+                {                   
+                    cleanForeignTextLine.append( QString{ bestTranslation.size() - wordLength, ' ' } );
                     foreign_text.append( this->cascadeHtmlSpace( bestTranslation.size() - wordLength ) );
                 }
 
@@ -315,19 +327,30 @@ QString MainWindow::newText()
             {
                 foreign_text.append( '\n' );
                 native_text.append( '\n' );
+
+                textEditViewWidth = std::max( textEditViewWidth, fm.width( cleanForeignTextLine ) );
+                textEditViewWidth = std::max( textEditViewWidth, fm.width( cleanNativeTextLine ) );
+
+                cleanNativeTextLine.clear();
+                cleanForeignTextLine.clear();
             }
             else
             {
+                cleanForeignTextLine.append( ' ' );
+                cleanNativeTextLine.append( ' ' );
+
                 foreign_text.append( this->maskHtml(' ') );
                 native_text.append( this->maskHtml(' ') );
             }
         }
     }
 
-    return this->mergeLanguages( foreign_text, native_text );
+    return this->mergeLanguages( foreign_text, native_text, textEditViewWidth );
 }
 
-QString MainWindow::mergeLanguages( const QString &foreignText, const QString &nativeText ) const
+QString MainWindow::mergeLanguages( const QString &foreignText,
+                                    const QString &nativeText,
+                                    const int textEditViewWidth ) const
 {
     const QStringList foreignText_lines = foreignText.split( '\n' );
     const QStringList nativeText_lines = nativeText.split( '\n' );
@@ -335,22 +358,42 @@ QString MainWindow::mergeLanguages( const QString &foreignText, const QString &n
     if( foreignText_lines.size() != nativeText_lines.size() )
         throw "Size mismatch";
 
+
+    QFont font{ this->ui->textEdit->font() };
+    QFontMetrics fm{ font };
+    const QChar unicodeLine{ 0x23AF }; // 0x23AF = '⎯'
+
+    const int maxCharWidth{ fm.width( unicodeLine ) };
+
+    int countUnicodeLines{ 0 };
+
+    // text available, no empty lines, countUnicodeLines can be set
+    if( textEditViewWidth > 0 )
+    {
+       countUnicodeLines = static_cast<int>( textEditViewWidth / maxCharWidth ) + 1;
+    }
+
+    const QString extraLine{ countUnicodeLines, unicodeLine };
+
     QString text;
+
+    //text.append( "<table width=\"100%\">" );
 
     for( int i=0; i<foreignText_lines.size(); ++i )
     {
         text.append( foreignText_lines.at(i) );
         text.append( this->maskHtml( '\n' ) );
+
         text.append( nativeText_lines.at(i) );
-        text.append( this->maskHtml( '\n' ) );
+        //text.append( this->maskHtml( '\n' ) );
 
         if( i != foreignText_lines.size()-1 )
         {
-            // extra empty line
-            //text.append( this->maskHtml( '\n' ) );
-            text.append( "<span style=\"color: #b5b5b5;\">⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯</span><br>");
+            text.append( "<br>" + extraLine + "<br>" );
         }
     }
+
+    //text.append( "</table>" );
 
     return text;
 }
@@ -419,8 +462,6 @@ void MainWindow::onDoubleClicked()
 
     if( !doubleClickedWord.isEmpty() )
     {
-        this->resetStatistic();
-
         const QString foreignLangTag = this->ui->comboBox_langs->currentText();
         const QString nativeLangTag = this->getNativeLang();
 
@@ -448,10 +489,16 @@ void MainWindow::onDoubleClicked()
 
         dialog->fillTranslationTable( word_pairs );
 
-        dialog->exec();
+        int dialogCode = dialog->exec();
 
-        this->ui->textEdit->setText( this->restoreForeignText() );
-        this->on_pushButton_analyse_clicked();
+        // act on dialog return code
+        if( dialogCode == QDialog::Accepted )
+        {
+            this->resetStatistic();
+
+            this->ui->textEdit->setText( this->restoreForeignText() );
+            this->on_pushButton_analyse_clicked();
+        }
     }
 }
 

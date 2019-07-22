@@ -64,7 +64,9 @@ private:
     void resetStatistic();
     void buildTranslationStructure( const QVector<Word> &foreign_words );
     QString newText();
-    QString mergeLanguages( const QString &foreignText, const QString &nativeText ) const;
+    QString mergeLanguages( const QString &foreignText,
+                            const QString &nativeText,
+                            const int textEditViewWidth ) const;
     QString htmlWord( QString word, const QString &styleColor = "black" ) const;
     QString cascadeHtmlSpace( const int count ) const;
     QString restoreForeignText() const;
