@@ -12,12 +12,19 @@ MyTextEdit::MyTextEdit( QWidget *parent )
 {
 }
 
+bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
+{
+    return this->part_of_word_sepearators.contains( ch );
+}
+
 
 void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
 {
     QTextEdit::mouseDoubleClickEvent( e );
 
     int pos = this->textCursor().positionInBlock();
+
+    qDebug() << "Clicked pos: " << pos;
 
     if( pos != 0 )
         --pos;
@@ -35,6 +42,7 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
     // find start
     for( int i = startPos; i>=0; i-- )
     {
+        //if( !text[i].isLetter() && !this->part_of_word_sepearators.contains( text[i] ) )
         if( text[i].isSpace() )
         {
             startPos = i+1;
@@ -47,10 +55,13 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
         }
     }
 
+
     // find end
+    endPos = startPos;
     for( int i = endPos; i<text.size(); i++ )
     {
-        if( text[i].isSpace() )
+        if( !text[i].isLetter() && !this->part_of_word_sepearators.contains( text[i] ) )
+        //if( text[i].isSpace() )
         {
             endPos = i-1;
             break;

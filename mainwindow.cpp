@@ -142,10 +142,17 @@ void MainWindow::analyse()
 
     for( const QChar &ch : text )
     {
-        if( !ch.isSpace() )
+        if( ch.isLetter() || this->ui->textEdit->isPartOfWordSeperators( ch ) )
         {
             if( !link.isEmpty() )
             {
+                // need to insert a whitespace at the end, to seperate words in textEdit
+                // (get trouble with doubleClick if whitespace is missing as word-seperation)
+                if( !link.back().isSpace() )
+                {
+                    link.append( ' ' );
+                }
+
                 tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
                 link.clear();
             }
@@ -363,10 +370,14 @@ QString MainWindow::newText()
         }
         else
         {
+            const QString htmlMaskedContent = this->maskHtml( word.getContent() );
+
             if( word.getContent().contains( "\n" ) )
             {
-                foreign_text.append( '\n' );
-                native_text.append( '\n' );
+                //foreign_text.append( htmlMaskedContent );
+                //native_text.append( htmlMaskedContent );
+                foreign_text.append( word.getContent() );
+                native_text.append( word.getContent() );
 
                 textEditViewWidth = std::max( textEditViewWidth, fm.width( cleanForeignTextLine ) );
                 textEditViewWidth = std::max( textEditViewWidth, fm.width( cleanNativeTextLine ) );
@@ -376,11 +387,15 @@ QString MainWindow::newText()
             }
             else
             {
-                cleanForeignTextLine.append( ' ' );
-                cleanNativeTextLine.append( ' ' );
+                cleanForeignTextLine.append( word.getContent() );
+                cleanNativeTextLine.append( word.getContent() );
+                //cleanForeignTextLine.append( ' ' );
+                //cleanNativeTextLine.append( ' ' );
 
-                foreign_text.append( this->maskHtml(' ') );
-                native_text.append( this->maskHtml(' ') );
+                foreign_text.append( htmlMaskedContent );
+                native_text.append( htmlMaskedContent );
+                //foreign_text.append( this->maskHtml(' ') );
+                //native_text.append( this->maskHtml(' ') );
             }
         }
     }
@@ -435,6 +450,18 @@ QString MainWindow::mergeLanguages( const QString &foreignText,
     return text;
 }
 
+QString MainWindow::maskHtml( const QString &content ) const
+{
+    QString htmlMaskedString;
+
+    for( const QChar &ch : content )
+    {
+        htmlMaskedString.append( this->maskHtml( ch ) );
+    }
+
+    return htmlMaskedString;
+}
+
 QString MainWindow::maskHtml( const QChar &ch ) const
 {
     if( ch == '\t' )
@@ -482,6 +509,47 @@ QString MainWindow::htmlWord( QString word, const QString &styleColor ) const
             arg( styleColor ).arg( word );
 }
 
+// -> is meant as "seperator" trim() .. remove not accepted seperators from start and end
+QString MainWindow::removeSeperators( const QString &word ) const
+{
+    if( word.isEmpty() )
+    {
+        return "";
+    }
+
+    QString newWord{ word };
+
+    for( int i = 0; i<word.size(); ++i )
+    {
+        QChar ch{ word.at(i) };
+
+        if( !ch.isLetter() && !this->ui->textEdit->isPartOfWordSeperators( ch ) )
+        {
+            newWord.remove( 0, 1 );
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    for( int i = word.size() - 1; i > 0; --i )
+    {
+        QChar ch{ word.at(i) };
+
+        if( !ch.isLetter() && !this->ui->textEdit->isPartOfWordSeperators( ch ) )
+        {
+            newWord.remove( newWord.size() - 1, 1 );
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return newWord;
+}
+
 void MainWindow::onDoubleClicked()
 {
     if( !this->analysed )
@@ -501,7 +569,8 @@ void MainWindow::onDoubleClicked()
         return;
     }
 
-    const QString doubleClickedWord{ this->ui->textEdit->textCursor().selectedText().trimmed() };
+    QString doubleClickedWord{ this->ui->textEdit->textCursor().selectedText().trimmed() };
+    doubleClickedWord = this->removeSeperators( doubleClickedWord );
 
     if( !doubleClickedWord.isEmpty() )
     {
@@ -617,6 +686,7 @@ void MainWindow::reset()
     this->resetStatistic();
     this->resetHighlighting();
 
+    this->ui->textEdit->setTextColor( QColor::fromRgb( 0,0,0 ) );
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
     this->ui->pushButton_analyse->setEnabled( true );

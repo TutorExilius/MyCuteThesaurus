@@ -79,6 +79,7 @@ private:
     void fillComboBox();
     QString colorizeWord( QString foreignWord, const bool isTranslated );
     QString maskHtml( const QChar &ch ) const;
+    QString maskHtml( const QString &content ) const;
     void resetHighlighting();
     void resetStatistic();
     void buildTranslationStructure( const QVector<Word> &foreign_words );
@@ -102,6 +103,7 @@ private:
 
     inline void cacheWord( const Word &word );
     void updateCachedWord( const QString &foreignWord, const QString &translation );
+    QString removeSeperators( const QString &word ) const;
 
     Ui::MainWindow *ui;
     QVector<Word> foreign_words;
