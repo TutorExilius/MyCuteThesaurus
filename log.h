@@ -34,9 +34,6 @@
 
 #include <QString>
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
-
 void init_log( const char *file );
 
 void logError( const QString &error );

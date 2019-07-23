@@ -150,7 +150,7 @@ void TranslationDialog::on_pushButton_ok_clicked()
     this->db_manager->translate( foreignWord, this->foreignLangId,
                                  nativeWord, this->nativeLangId );
 
-    emit translationAdded();
+    emit translationAdded( foreignWord, nativeWord );
 
     this->close();
 }

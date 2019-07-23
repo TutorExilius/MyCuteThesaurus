@@ -26,6 +26,9 @@
 
 #include "log.h"
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 #include <QDebug>
 
 void init_log( const char *file )

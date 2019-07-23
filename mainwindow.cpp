@@ -253,14 +253,54 @@ void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
     {
         if( word.isWordType() )
         {
-            const QVector<QString> translations = this->dbManager->getTanslations(
-                        word.getContent(), foreignLangId, nativeLangId );
+            const QVector<QString> translations =
+                    this->getTanslations( word.getContent(),
+                                          foreignLangId,
+                                          nativeLangId );
 
             word.setTranslations( translations );
         }
 
         this->foreign_words.push_back( word );
+        this->cacheWord( word );
     }
+}
+
+void MainWindow::cacheWord( const Word &word )
+{
+    if( !this->chachedTranslations.contains( word.getContent() ) )
+    {
+        this->chachedTranslations.insert( word.getContent(), word );
+    }
+}
+
+void MainWindow::updateCachedWord( const QString &foreignWord, const QString &translation )
+{
+    auto word = this->chachedTranslations.find( foreignWord );
+
+    if( word !=  this->chachedTranslations.end() )
+    {
+        Word updatedWord{ word.value() };
+        updatedWord.addTranslation( translation );
+
+        this->chachedTranslations.insert( foreignWord, updatedWord );
+    }
+}
+
+QVector<QString> MainWindow::getTanslations( const QString &word,
+                                             const int foreignLangID,
+                                             const int nativeLangId,
+                                             bool useCache ) const
+{
+    if( useCache )
+    {
+        if( this->chachedTranslations.contains( word ) )
+        {
+            return this->chachedTranslations.value( word ).getTranslations();
+        }
+    }
+
+    return this->dbManager->getTanslations( word, foreignLangID, nativeLangId );
 }
 
 QString MainWindow::cascadeHtmlSpace( const int count ) const
@@ -500,8 +540,10 @@ void MainWindow::onDoubleClicked()
     }
 }
 
-void MainWindow::onTranslationAdded()
+void MainWindow::onTranslationAdded( QString foreignWord, QString translation )
 {
+    this->updateCachedWord( foreignWord, translation );
+
     this->resetStatistic();
 
     this->ui->textEdit->setText( this->restoreForeignText() );

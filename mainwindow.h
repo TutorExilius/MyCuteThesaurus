@@ -50,7 +50,7 @@ public:
     QString getNativeLang() const;
 
 private slots:
-    void onTranslationAdded();
+    void onTranslationAdded( QString foreignWord, QString translation );
 
     void onOpenFileChanged();
     void onDoubleClicked();
@@ -95,6 +95,13 @@ private:
     void saveTo( const QString &fileName ) const;
     void reset();
     void switchMode();
+    QVector<QString> getTanslations( const QString &word,
+                                     const int foreignLangID,
+                                     const int nativeLangId,
+                                     bool useCache = true ) const;
+
+    inline void cacheWord( const Word &word );
+    void updateCachedWord( const QString &foreignWord, const QString &translation );
 
     Ui::MainWindow *ui;
     QVector<Word> foreign_words;
@@ -109,6 +116,9 @@ private:
     bool openFileChangedFromExtern;
     Mode mode;
     QMap<TextTypeColor, QString> textColors;
+
+    // Word as String -> Word as Objcet (with Translations inside)
+    QMap<QString, Word> chachedTranslations;
 };
 
 #endif // MAINWINDOW_H

@@ -41,7 +41,7 @@ private slots:
     void on_lineEdit_translateToLang_textChanged( const QString &text );
 
 signals:
-    void translationAdded();
+    void translationAdded( QString foreignWord, QString translation );
 
 private:
     void deleteItem( QTableWidgetItem *item );

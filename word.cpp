@@ -31,7 +31,15 @@ QVector<QString> Word::getTranslations() const
     return this->translations;
 }
 
-void Word::setTranslations(const QVector<QString> &translations)
+void Word::setTranslations( const QVector<QString> &translations )
 {
     this->translations = translations;
+}
+
+void Word::addTranslation( const QString &translation )
+{
+    if( !this->translations.contains( translation ) )
+    {
+        this->translations.push_back( translation );
+    }
 }
