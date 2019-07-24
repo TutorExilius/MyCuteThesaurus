@@ -50,6 +50,7 @@ public:
     QString getNativeLang() const;
 
 private slots:
+    void onLangChanged();
     void onEscape();
     void onTranslationDeleted( QString foreignWord, QString translation );
     void onTranslationAdded( QString foreignWord, QString translation );

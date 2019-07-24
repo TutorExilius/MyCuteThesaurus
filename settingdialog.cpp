@@ -7,6 +7,7 @@ SettingDialog::SettingDialog( QWidget *parent, DB_Manager *db_manager )
 : QDialog{ parent }
 , ui{ new Ui::SettingDialog }
 , db_manager{ db_manager }
+, langChanged{ false }
 {
     this->ui->setupUi( this );
 
@@ -44,5 +45,20 @@ void SettingDialog::on_pushButton_save_clicked()
 
     qDebug() << "saved";
 
+    if( this->langChanged )
+    {
+        emit langChangedSignal();
+    }
+
     this->close();
+}
+
+void SettingDialog::on_comboBox_nativeLanguages_currentIndexChanged(int index)
+{
+    this->langChanged = true;
+}
+
+void SettingDialog::on_comboBox_foreignLanguages_currentIndexChanged(int index)
+{
+    this->langChanged = true;
 }

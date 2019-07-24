@@ -104,6 +104,11 @@ void MainWindow::onOpenFileChanged()
     this->openFileChangedFromExtern = true;
 }
 
+void MainWindow::onLangChanged()
+{
+    this->chachedTranslations.clear();
+}
+
 void MainWindow::on_actionAbout_Qt_triggered()
 {
     QMessageBox::aboutQt( this );
@@ -835,6 +840,11 @@ void MainWindow::on_pushButton_edit_clicked()
 void MainWindow::on_action_Settings_triggered()
 {
     SettingDialog *dialog = new SettingDialog{ this, this->dbManager };
+
+    QObject::connect( dialog, &SettingDialog::langChangedSignal,
+                      this, &MainWindow::onLangChanged,
+                      Qt::UniqueConnection );
+
     dialog->exec();
 }
 

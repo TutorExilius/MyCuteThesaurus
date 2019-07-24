@@ -21,10 +21,19 @@ public:
 private slots:
     void on_pushButton_save_clicked();
 
+    void on_comboBox_nativeLanguages_currentIndexChanged(int index);
+
+    void on_comboBox_foreignLanguages_currentIndexChanged(int index);
+
+signals:
+    void langChangedSignal();
+
 private:
     Ui::SettingDialog *ui;
 
     DB_Manager *db_manager;
+
+    bool langChanged;
 };
 
 #endif // SETTINGDIALOG_H
