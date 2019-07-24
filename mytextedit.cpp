@@ -22,8 +22,6 @@ MyTextEdit::MyTextEdit( QWidget *parent )
                       Qt::UniqueConnection );
 
     this->addAction( pAction );
-
-    this->setContextMenuPolicy( Qt::ActionsContextMenu );
 }
 
 bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
