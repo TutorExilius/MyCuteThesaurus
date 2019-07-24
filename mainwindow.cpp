@@ -783,9 +783,11 @@ void MainWindow::loadFromFile()
     f.open( QFile::ReadOnly | QFile::Text );
 
     QTextStream fileStream( &f );
-    this->ui->textEdit->setText( fileStream.readAll() );
 
     this->reset();
+
+    this->ui->textEdit->setText( fileStream.readAll() );
+
 
     if( this->mode == Mode::TRANSLATE_MODE )
     {

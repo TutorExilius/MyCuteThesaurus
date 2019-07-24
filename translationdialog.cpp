@@ -106,9 +106,14 @@ void TranslationDialog::deleteItem( QTableWidgetItem *item )
     bool ok = false;
     const int wordID = item->data(Qt::UserRole).toInt( &ok );
 
+    if( !item->text().isEmpty() )
+    {
+        this->rememberedWordInSelectedItemWidget = item->text();
+    }
+
     if( ok )
     {
-        this->toDeleteTranslations.insert( wordID, item->text() );
+        this->toDeleteTranslations.insert( wordID, this->rememberedWordInSelectedItemWidget );
         this->ui->tableWidget_translations->removeRow( item->row() );
         this->ui->pushButton_ok->setEnabled( true );
     }
@@ -187,4 +192,9 @@ void TranslationDialog::on_lineEdit_translateToLang_textChanged( const QString &
     {
         this->ui->pushButton_ok->setEnabled( false );
     }
+}
+
+void TranslationDialog::on_tableWidget_translations_itemDoubleClicked( QTableWidgetItem *item )
+{
+    this->rememberedWordInSelectedItemWidget = item->text();
 }

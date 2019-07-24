@@ -37,8 +37,8 @@ protected:
 private slots:
     void on_pushButton_ok_clicked();
     void onItemChanged( QTableWidgetItem *item );
-
     void on_lineEdit_translateToLang_textChanged( const QString &text );
+    void on_tableWidget_translations_itemDoubleClicked(QTableWidgetItem *item);
 
 signals:
     void translationDeleted( QString foreignWord, QString translation );
@@ -52,6 +52,7 @@ private:
     int nativeLangId;
     DB_Manager *db_manager;
     QMap<int,QString> toDeleteTranslations;
+    QString rememberedWordInSelectedItemWidget;
 };
 
 #endif // TRANSLATIONDIALOG_H
