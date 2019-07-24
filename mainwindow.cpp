@@ -67,6 +67,10 @@ MainWindow::MainWindow( QWidget *parent )
     QObject::connect( this->fileChangeWatcher, &QFileSystemWatcher::fileChanged,
                       this, &MainWindow::onOpenFileChanged,
                       Qt::UniqueConnection );
+
+    QObject::connect( this->ui->textEdit, &MyTextEdit::escapeTriggered,
+                      this, &MainWindow::onEscape,
+                      Qt::UniqueConnection );
 }
 
 MainWindow::~MainWindow()
@@ -178,25 +182,35 @@ void MainWindow::analyse()
     this->buildTranslationStructure( tmp_foreign_words );
 }
 
+void MainWindow::switchToEditMode()
+{
+    this->ui->pushButton_edit->setEnabled( false );
+    this->ui->pushButton_analyse->setEnabled( true );
+
+    this->ui->action_Save->setEnabled( true );
+    this->ui->actionSave_As->setEnabled( true );
+    this->mode = Mode::EDIT_MODE;
+}
+
+void MainWindow::switchToTranslationMode()
+{
+    this->ui->pushButton_edit->setEnabled( true );
+    this->ui->pushButton_analyse->setEnabled( false );
+
+    this->ui->action_Save->setEnabled( false );
+    this->ui->actionSave_As->setEnabled( false );
+    this->mode = Mode::TRANSLATE_MODE;
+}
+
 void MainWindow::switchMode()
 {
     if( this->mode == Mode::TRANSLATE_MODE ) // Switch to Edit Mode
     {
-        this->ui->pushButton_edit->setEnabled( false );
-        this->ui->pushButton_analyse->setEnabled( true );
-
-        this->ui->action_Save->setEnabled( true );
-        this->ui->actionSave_As->setEnabled( true );
-        this->mode = Mode::EDIT_MODE;
+        this->switchToEditMode();
     }
     else // Switch to Translation Mode
     {
-        this->ui->pushButton_edit->setEnabled( true );
-        this->ui->pushButton_analyse->setEnabled( false );
-
-        this->ui->action_Save->setEnabled( false );
-        this->ui->actionSave_As->setEnabled( false );
-        this->mode = Mode::TRANSLATE_MODE;
+        this->switchToTranslationMode();
     }
 }
 
@@ -864,4 +878,16 @@ void MainWindow::on_action_Save_triggered()
 void MainWindow::on_actionSave_As_triggered()
 {
     this->saveAsFile();
+}
+
+void MainWindow::onEscape()
+{
+    if( this->mode == Mode::EDIT_MODE )
+    {
+        return;
+    }
+
+    this->reset();
+    this->switchToEditMode();
+    this->ui->textEdit->setText( this->originForeignText );
 }

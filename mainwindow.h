@@ -50,6 +50,7 @@ public:
     QString getNativeLang() const;
 
 private slots:
+    void onEscape();
     void onTranslationDeleted( QString foreignWord, QString translation );
     void onTranslationAdded( QString foreignWord, QString translation );
 
@@ -96,6 +97,8 @@ private:
     void loadFromFile();
     void saveTo( const QString &fileName ) const;
     void reset();
+    void switchToEditMode();
+    void switchToTranslationMode();
     void switchMode();
     QVector<QString> getTanslations( const QString &word,
                                      const int foreignLangID,

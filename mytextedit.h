@@ -19,8 +19,10 @@ protected:
 
 signals:
     void doubleClicked();
+    void escapeTriggered();
 
 public slots:
+    void onEscapeTriggered();
 
 private:
     // TODO: initialise this vector from database!

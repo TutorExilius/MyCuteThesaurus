@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 
 #include <QDebug>
+#include <QAction>
 #include <QTextEdit>
 #include <QMoveEvent>
 #include <QScrollBar>
@@ -12,6 +13,17 @@
 MyTextEdit::MyTextEdit( QWidget *parent )
 : QTextEdit( parent )
 {
+    QAction* pAction = new QAction( "text4ESC", this );
+    pAction->setShortcut( Qt::Key_Escape );
+    pAction->setShortcutContext( Qt::WindowShortcut );
+
+    QObject::connect( pAction, &QAction::triggered,
+                      this, &MyTextEdit::onEscapeTriggered,
+                      Qt::UniqueConnection );
+
+    this->addAction( pAction );
+
+    this->setContextMenuPolicy( Qt::ActionsContextMenu );
 }
 
 bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
@@ -90,4 +102,9 @@ void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
     this->setTextCursor( c );
 
     emit doubleClicked();
+}
+
+void MyTextEdit::onEscapeTriggered()
+{
+    emit escapeTriggered();
 }
