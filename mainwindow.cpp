@@ -51,8 +51,6 @@ MainWindow::MainWindow( QWidget *parent )
 
     this->dbManager = new DB_Manager{ this, "mycutethesaurus.db" };
 
-    this->ui->statusBar->showMessage( "Current native language: " + this->dbManager->getCurrentNativeLang() );
-
     QObject::connect( this->ui->textEdit, &MyTextEdit::doubleClicked,
                       this, &MainWindow::onDoubleClicked,
                       Qt::UniqueConnection );
@@ -71,6 +69,8 @@ MainWindow::MainWindow( QWidget *parent )
     QObject::connect( this->ui->textEdit, &MyTextEdit::escapeTriggered,
                       this, &MainWindow::onEscape,
                       Qt::UniqueConnection );
+
+    this->ui->statusBar->showMessage( "Current native language: " + this->dbManager->getCurrentNativeLang() );
 }
 
 MainWindow::~MainWindow()
@@ -127,7 +127,7 @@ void MainWindow::on_actionAbout_My_Cute_Thesaurus_triggered()
         { AboutSection::TITLE, "About My Cute Thesaurus" },
         { AboutSection::VERSION, MainWindow::normalizeVersion(version) }, // "v0.1-beta-1" },
         { AboutSection::REVISION, MainWindow::revision(version) },
-        { AboutSection::DATE, "20.07.2019" },
+        { AboutSection::DATE, "24.07.2019" },
         { AboutSection::SHORT_INFO, "A Let's Try [Qt] project created on <a href=http://twitch.tv/tutorexilius>"
         "Twitch.tv/TutorExilius</a>." },
         { AboutSection::DESCRIPTION, "Description here..."},
