@@ -50,6 +50,7 @@ public:
     QString getNativeLang() const;
 
 private slots:
+    void onTranslationDeleted( QString foreignWord, QString translation );
     void onTranslationAdded( QString foreignWord, QString translation );
 
     void onOpenFileChanged();
@@ -121,6 +122,8 @@ private:
 
     // Word as String -> Word as Objcet (with Translations inside)
     QMap<QString, Word> chachedTranslations;
+
+    QString originForeignText;
 };
 
 #endif // MAINWINDOW_H

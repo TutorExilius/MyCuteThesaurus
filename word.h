@@ -23,7 +23,9 @@ public:
     bool hasTranslations() const;
     QVector<QString> getTranslations() const;
     void setTranslations( const QVector<QString> &translations );
+    void setContent( const QString &content );
     void addTranslation( const QString &translation );
+    void removeTranslation( const QString &translation );
 
 private:
     QString content;

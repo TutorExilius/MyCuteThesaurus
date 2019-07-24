@@ -36,10 +36,23 @@ void Word::setTranslations( const QVector<QString> &translations )
     this->translations = translations;
 }
 
+void Word::setContent( const QString &content )
+{
+    this->content = content;
+}
+
 void Word::addTranslation( const QString &translation )
 {
     if( !this->translations.contains( translation ) )
     {
         this->translations.push_back( translation );
+    }
+}
+
+void Word::removeTranslation( const QString &translation )
+{
+    if( this->translations.contains( translation ) )
+    {
+        this->translations.removeAll( translation );
     }
 }

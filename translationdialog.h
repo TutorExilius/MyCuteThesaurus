@@ -2,7 +2,7 @@
 #define TRANSLATIONDIALOG_H
 
 #include <QDialog>
-#include <QVector>
+#include <QMap>
 #include <QString>
 
 // remove! ( DEBUG )
@@ -41,6 +41,7 @@ private slots:
     void on_lineEdit_translateToLang_textChanged( const QString &text );
 
 signals:
+    void translationDeleted( QString foreignWord, QString translation );
     void translationAdded( QString foreignWord, QString translation );
 
 private:
@@ -50,7 +51,7 @@ private:
     int foreignLangId;
     int nativeLangId;
     DB_Manager *db_manager;
-    QVector<int> toDeleteRowEntries;
+    QMap<int,QString> toDeleteTranslations;
 };
 
 #endif // TRANSLATIONDIALOG_H

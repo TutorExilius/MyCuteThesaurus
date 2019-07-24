@@ -146,13 +146,6 @@ void MainWindow::analyse()
         {
             if( !link.isEmpty() )
             {
-                // need to insert a whitespace at the end, to seperate words in textEdit
-                // (get trouble with doubleClick if whitespace is missing as word-seperation)
-                if( !link.back().isSpace() )
-                {
-                    link.append( ' ' );
-                }
-
                 tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
                 link.clear();
             }
@@ -181,6 +174,7 @@ void MainWindow::analyse()
         tmp_foreign_words.push_back( Word{ link, TYPE::LINK } );
     }
 
+    this->originForeignText = text;
     this->buildTranslationStructure( tmp_foreign_words );
 }
 
@@ -266,6 +260,17 @@ void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
                                           nativeLangId );
 
             word.setTranslations( translations );
+        }
+        else
+        {
+            QString content{ word.getContent() };
+
+            if( !content.isEmpty() && !content.back().isSpace() )
+            {
+                content.append( ' ' );
+            }
+
+            word.setContent( content );
         }
 
         this->foreign_words.push_back( word );
@@ -374,8 +379,6 @@ QString MainWindow::newText()
 
             if( word.getContent().contains( "\n" ) )
             {
-                //foreign_text.append( htmlMaskedContent );
-                //native_text.append( htmlMaskedContent );
                 foreign_text.append( word.getContent() );
                 native_text.append( word.getContent() );
 
@@ -389,13 +392,9 @@ QString MainWindow::newText()
             {
                 cleanForeignTextLine.append( word.getContent() );
                 cleanNativeTextLine.append( word.getContent() );
-                //cleanForeignTextLine.append( ' ' );
-                //cleanNativeTextLine.append( ' ' );
 
                 foreign_text.append( htmlMaskedContent );
                 native_text.append( htmlMaskedContent );
-                //foreign_text.append( this->maskHtml(' ') );
-                //native_text.append( this->maskHtml(' ') );
             }
         }
     }
@@ -411,7 +410,9 @@ QString MainWindow::mergeLanguages( const QString &foreignText,
     const QStringList nativeText_lines = nativeText.split( '\n' );
 
     if( foreignText_lines.size() != nativeText_lines.size() )
+    {
         throw "Size mismatch";
+    }
 
 
     QFont font{ this->ui->textEdit->font() };
@@ -601,6 +602,10 @@ void MainWindow::onDoubleClicked()
 
         translationDialog->fillTranslationTable( word_pairs );
 
+        QObject::connect( translationDialog, &TranslationDialog::translationDeleted,
+                          this, &MainWindow::onTranslationDeleted,
+                          Qt::UniqueConnection );
+
         QObject::connect( translationDialog, &TranslationDialog::translationAdded,
                           this, &MainWindow::onTranslationAdded,
                           Qt::UniqueConnection );
@@ -609,13 +614,27 @@ void MainWindow::onDoubleClicked()
     }
 }
 
+void MainWindow::onTranslationDeleted( QString foreignWord, QString translation )
+{
+    this->chachedTranslations[foreignWord].removeTranslation( translation );
+
+    if( !this->chachedTranslations[foreignWord].hasTranslations() )
+    {
+        this->chachedTranslations.remove( foreignWord );
+    }
+
+    this->resetStatistic();
+    this->ui->textEdit->setText( this->originForeignText );
+    this->on_pushButton_analyse_clicked();
+}
+
+
 void MainWindow::onTranslationAdded( QString foreignWord, QString translation )
 {
     this->updateCachedWord( foreignWord, translation );
 
     this->resetStatistic();
-
-    this->ui->textEdit->setText( this->restoreForeignText() );
+    this->ui->textEdit->setText( this->originForeignText );
     this->on_pushButton_analyse_clicked();
 }
 
@@ -766,14 +785,9 @@ void MainWindow::saveTo( const QString &fileName ) const
 
 void MainWindow::on_pushButton_edit_clicked()
 {
-    this->resetHighlighting();
+    this->reset();
 
-    this->ui->textEdit->setText( this->restoreForeignText() );
-
-    this->ui->textEdit->setReadOnly( false );
-    this->ui->comboBox_langs->setEnabled( true );
-    this->ui->pushButton_analyse->setEnabled( true );
-    this->ui->pushButton_edit->setEnabled( false );
+    this->ui->textEdit->setText( this->originForeignText );
 
     this->switchMode();
 }
@@ -790,6 +804,7 @@ void MainWindow::on_textEdit_textChanged()
 
 void MainWindow::on_action_Open_triggered()
 {
+    this->reset();
     this->loadFromFile();
 }
 

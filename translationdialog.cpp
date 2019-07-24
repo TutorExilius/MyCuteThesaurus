@@ -108,7 +108,7 @@ void TranslationDialog::deleteItem( QTableWidgetItem *item )
 
     if( ok )
     {
-        this->toDeleteRowEntries.push_back( wordID );
+        this->toDeleteTranslations.insert( wordID, item->text() );
         this->ui->tableWidget_translations->removeRow( item->row() );
         this->ui->pushButton_ok->setEnabled( true );
     }
@@ -133,24 +133,29 @@ void TranslationDialog::updateTranslateToLangTitle( const QString &lang )
 
 void TranslationDialog::on_pushButton_ok_clicked()
 {
+    const QString foreignWord{ this->ui->label_word->text() };
+
     // delete removed Words from DB
-    for( int wordID :this->toDeleteRowEntries )
+    for( int wordID : this->toDeleteTranslations.keys() )
     {
         this->db_manager->remove( wordID );
+        emit translationDeleted( foreignWord, this->toDeleteTranslations.value( wordID ) );
     }
 
-    const QString foreignWord{ this->ui->label_word->text() };
-    const QString nativeWord{ this->ui->lineEdit_translateToLang->text() };
+    const QString nativeWord{ this->ui->lineEdit_translateToLang->text().trimmed() };
 
-    // translate from foreign to native
-    this->db_manager->translate( nativeWord, this->nativeLangId,
-                                 foreignWord, this->foreignLangId );
+    if( !nativeWord.isEmpty() )
+    {
+        // translate from foreign to native
+        this->db_manager->translate( nativeWord, this->nativeLangId,
+                                     foreignWord, this->foreignLangId );
 
-    // translate from native to foreign
-    this->db_manager->translate( foreignWord, this->foreignLangId,
-                                 nativeWord, this->nativeLangId );
+        // translate from native to foreign
+        this->db_manager->translate( foreignWord, this->foreignLangId,
+                                     nativeWord, this->nativeLangId );
 
-    emit translationAdded( foreignWord, nativeWord );
+        emit translationAdded( foreignWord, nativeWord );
+    }
 
     this->close();
 }
