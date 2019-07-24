@@ -5,7 +5,9 @@
 #include <QDebug>
 #include <QTextEdit>
 #include <QMoveEvent>
+#include <QScrollBar>
 #include <QCoreApplication>
+
 
 MyTextEdit::MyTextEdit( QWidget *parent )
 : QTextEdit( parent )
@@ -17,6 +19,15 @@ bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
     return this->part_of_word_sepearators.contains( ch );
 }
 
+int MyTextEdit::getScrollPosition() const
+{
+    return this->verticalScrollBar()->value();
+}
+
+void MyTextEdit::setScrollPosition( const int position )
+{
+    this->verticalScrollBar()->setValue( position );
+}
 
 void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )
 {

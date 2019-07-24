@@ -180,14 +180,20 @@ void MainWindow::analyse()
 
 void MainWindow::switchMode()
 {
-    if( this->mode == Mode::TRANSLATE_MODE )
+    if( this->mode == Mode::TRANSLATE_MODE ) // Switch to Edit Mode
     {
+        this->ui->pushButton_edit->setEnabled( false );
+        this->ui->pushButton_analyse->setEnabled( true );
+
         this->ui->action_Save->setEnabled( true );
         this->ui->actionSave_As->setEnabled( true );
         this->mode = Mode::EDIT_MODE;
     }
-    else
+    else // Switch to Translation Mode
     {
+        this->ui->pushButton_edit->setEnabled( true );
+        this->ui->pushButton_analyse->setEnabled( false );
+
         this->ui->action_Save->setEnabled( false );
         this->ui->actionSave_As->setEnabled( false );
         this->mode = Mode::TRANSLATE_MODE;
@@ -198,8 +204,8 @@ void MainWindow::on_pushButton_analyse_clicked()
 {
     this->ui->textEdit->setReadOnly( true );
     this->ui->comboBox_langs->setEnabled( false );
-    this->ui->pushButton_analyse->setEnabled( false );
-    this->ui->pushButton_edit->setEnabled( true );
+    //this->ui->pushButton_analyse->setEnabled( false );
+    //this->ui->pushButton_edit->setEnabled( true );
 
     const QString selectedLang{ this->ui->comboBox_langs->currentText() };
 
@@ -233,7 +239,7 @@ void MainWindow::on_pushButton_analyse_clicked()
     this->ui->label_statistics->setText( statistics );
     this->ui->comboBox_langs->setCurrentText( selectedLang );
 
-    if( this->mode != Mode::TRANSLATE_MODE )
+    if( this->mode == Mode::EDIT_MODE )
     {
         this->switchMode();
     }
@@ -616,6 +622,8 @@ void MainWindow::onDoubleClicked()
 
 void MainWindow::onTranslationDeleted( QString foreignWord, QString translation )
 {
+    const int lastScrollPosition{ this->ui->textEdit->getScrollPosition() };
+
     this->chachedTranslations[foreignWord].removeTranslation( translation );
 
     if( !this->chachedTranslations[foreignWord].hasTranslations() )
@@ -626,16 +634,22 @@ void MainWindow::onTranslationDeleted( QString foreignWord, QString translation 
     this->resetStatistic();
     this->ui->textEdit->setText( this->originForeignText );
     this->on_pushButton_analyse_clicked();
+
+    this->ui->textEdit->setScrollPosition( lastScrollPosition );
 }
 
 
 void MainWindow::onTranslationAdded( QString foreignWord, QString translation )
 {
+    const int lastScrollPosition{ this->ui->textEdit->getScrollPosition() };
+
     this->updateCachedWord( foreignWord, translation );
 
     this->resetStatistic();
     this->ui->textEdit->setText( this->originForeignText );
     this->on_pushButton_analyse_clicked();
+
+    this->ui->textEdit->setScrollPosition( lastScrollPosition );
 }
 
 void MainWindow::resetStatistic()
@@ -759,6 +773,11 @@ void MainWindow::loadFromFile()
 
     this->reset();
 
+    if( this->mode == Mode::TRANSLATE_MODE )
+    {
+        this->switchMode();
+    }
+
     if( !this->fileChangeWatcher->files().isEmpty() )
     {
         this->fileChangeWatcher->removePath( this->openedFileName );
@@ -804,7 +823,6 @@ void MainWindow::on_textEdit_textChanged()
 
 void MainWindow::on_action_Open_triggered()
 {
-    this->reset();
     this->loadFromFile();
 }
 

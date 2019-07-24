@@ -11,6 +11,8 @@ class MyTextEdit : public QTextEdit
 public:
     explicit MyTextEdit( QWidget *parent = nullptr );
     bool isPartOfWordSeperators( const QChar &ch ) const;
+    int getScrollPosition() const;
+    void setScrollPosition( const int position );
 
 protected:
     void mouseDoubleClickEvent( QMouseEvent *e ) override;
