@@ -167,6 +167,7 @@ void TranslationDialog::on_pushButton_ok_clicked()
 
 void TranslationDialog::onItemChanged( QTableWidgetItem *item )
 {
+    const QString foreignWord{ this->ui->label_word->text() };
     const QString word = item->text().trimmed();
 
     if( word.isEmpty() )
@@ -177,6 +178,8 @@ void TranslationDialog::onItemChanged( QTableWidgetItem *item )
     {
         const int wordID = item->data( Qt::UserRole ).toInt();
         this->db_manager->update( wordID, word );
+        emit translationDeleted( foreignWord, this->rememberedWordInSelectedItemWidget );
+        emit translationAdded( foreignWord, item->text() );
     }
 }
 

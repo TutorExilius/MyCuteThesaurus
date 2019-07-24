@@ -285,8 +285,9 @@ void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
         {
             QString content{ word.getContent() };
 
-            if( !content.isEmpty() && !content.back().isSpace() )
+            if( !content.isEmpty() )
             {
+                content.prepend( ' ' );
                 content.append( ' ' );
             }
 
@@ -294,7 +295,11 @@ void MainWindow::buildTranslationStructure( const QVector<Word> &foreign_words )
         }
 
         this->foreign_words.push_back( word );
-        this->cacheWord( word );
+
+        if( word.isWordType() )
+        {
+            this->cacheWord( word );
+        }
     }
 }
 
