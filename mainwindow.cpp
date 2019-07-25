@@ -388,6 +388,7 @@ QString MainWindow::newText()
                 if( bestTranslation.size() < wordLength )
                 {
                     cleanNativeTextLine.append( QString{ wordLength - bestTranslation.size(), ' ' } );
+
                     bestTranslation.append( this->cascadeHtmlSpace( wordLength - bestTranslation.size() ) );
                 }
                 else
@@ -468,7 +469,13 @@ QString MainWindow::mergeLanguages( const QString &foreignText,
         text.append( foreignText_lines.at(i) );
         text.append( this->maskHtml( '\n' ) );
 
-        text.append( nativeText_lines.at(i) );
+        // make translation bold ---
+        QString nativeText{ nativeText_lines.at(i) };
+        nativeText.prepend( "<span style=\"font-weight: bold;\">" );
+        nativeText.append( "</span>" );
+
+        text.append( nativeText );
+        //text.append( nativeText_lines.at(i) );
 
         if( i != foreignText_lines.size()-1 )
         {
@@ -744,6 +751,7 @@ void MainWindow::reset()
     this->resetHighlighting();
 
     this->ui->textEdit->setTextColor( QColor::fromRgb( 0,0,0 ) );
+    this->ui->textEdit->setFontWeight( QFont::Weight::Normal );
     this->ui->textEdit->setReadOnly( false );
     this->ui->comboBox_langs->setEnabled( true );
     this->ui->pushButton_analyse->setEnabled( true );

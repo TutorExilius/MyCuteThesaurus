@@ -13,15 +13,13 @@
 MyTextEdit::MyTextEdit( QWidget *parent )
 : QTextEdit( parent )
 {
-    QAction* pAction = new QAction( "text4ESC", this );
-    pAction->setShortcut( Qt::Key_Escape );
-    pAction->setShortcutContext( Qt::WindowShortcut );
+    QAction* escAction = new QAction( "text4ESC", this );
+    escAction->setShortcut( Qt::Key_Escape );
+    escAction->setShortcutContext( Qt::WindowShortcut );
 
-    QObject::connect( pAction, &QAction::triggered,
+    QObject::connect( escAction, &QAction::triggered,
                       this, &MyTextEdit::onEscapeTriggered,
                       Qt::UniqueConnection );
-
-    this->addAction( pAction );
 }
 
 bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
@@ -37,6 +35,30 @@ int MyTextEdit::getScrollPosition() const
 void MyTextEdit::setScrollPosition( const int position )
 {
     this->verticalScrollBar()->setValue( position );
+}
+
+void MyTextEdit::keyPressEvent( QKeyEvent *event )
+{
+    QTextEdit::keyPressEvent( event );
+
+    switch( event->key() )
+    {
+    case Qt::Key_Control:
+        this->setReadOnly( true );
+        break;
+    }
+}
+
+void MyTextEdit::keyReleaseEvent( QKeyEvent *event )
+{
+    QTextEdit::keyPressEvent( event );
+
+    switch( event->key() )
+    {
+    case Qt::Key_Control:
+        this->setReadOnly( false );
+        break;
+    }
 }
 
 void MyTextEdit::mouseDoubleClickEvent( QMouseEvent *e )

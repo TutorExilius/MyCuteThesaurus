@@ -15,6 +15,8 @@ public:
     void setScrollPosition( const int position );
 
 protected:
+    void keyPressEvent( QKeyEvent *event ) override;
+    void keyReleaseEvent( QKeyEvent *event ) override;
     void mouseDoubleClickEvent( QMouseEvent *e ) override;
 
 signals:
