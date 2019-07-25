@@ -34,10 +34,12 @@ public:
     {
         FOREIGN_TEXT_KNOWN_COLOR,
         FOREIGN_TEXT_UNKNOWN_COLOR,
-        NATIVE_TEXT_COLOR,
         STATISTIC_KNOWN_WORDS_COLOR,
         STATISTIC_UNKNOWN_WORDS_COLOR,
-        HORIZONTAL_LINE_COLOR
+        HORIZONTAL_LINE_COLOR,
+        SEPERATOR_COLOR,
+        NATIVE_MARKED_TEXT_COLOR,
+        NATIVE_UNMARKED_TEXT_COLOR
     };
 
     static QString normalizeVersion( const QString &version );

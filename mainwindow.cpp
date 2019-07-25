@@ -42,10 +42,12 @@ MainWindow::MainWindow( QWidget *parent )
 , mode{ Mode::EDIT_MODE }
 , textColors{ { TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR, "#32ab32" },
               { TextTypeColor::FOREIGN_TEXT_UNKNOWN_COLOR, "#ff0000" },
-              { TextTypeColor::NATIVE_TEXT_COLOR, "#000000" },
+              { TextTypeColor::NATIVE_UNMARKED_TEXT_COLOR, "#010101" },
+              { TextTypeColor::NATIVE_MARKED_TEXT_COLOR, "#A0A0A0" },
               { TextTypeColor::STATISTIC_KNOWN_WORDS_COLOR, "#32ab32" },
               { TextTypeColor::STATISTIC_UNKNOWN_WORDS_COLOR, "#ff0000" },
-              { TextTypeColor::HORIZONTAL_LINE_COLOR, "#bcbcbc" } }
+              { TextTypeColor::HORIZONTAL_LINE_COLOR, "#bcbcbc" },
+              { TextTypeColor::SEPERATOR_COLOR, "#999999" } }
 {
     this->ui->setupUi( this );
 
@@ -473,6 +475,9 @@ QString MainWindow::mergeLanguages( const QString &foreignText,
         QString nativeText{ nativeText_lines.at(i) };
         nativeText.prepend( "<span style=\"font-weight: bold;\">" );
         nativeText.append( "</span>" );
+        nativeText.replace( "<span style=color:black>",
+                            QString{"<span style=color:%1>"}
+                            .arg( this->textColors[TextTypeColor::NATIVE_UNMARKED_TEXT_COLOR] ) );
 
         text.append( nativeText );
         //text.append( nativeText_lines.at(i) );
@@ -598,11 +603,16 @@ void MainWindow::onDoubleClicked()
     const QString doubleClickedWord_html = this->ui->textEdit->textCursor().selection().toHtml();
 
     if( doubleClickedWord_html.contains(
+          QString{"<!--StartFragment--><span style=\" font-weight:600; color:%1;\">"}
+            .arg( this->textColors[TextTypeColor::NATIVE_UNMARKED_TEXT_COLOR] ) )
+        // TODO: check expected string-structure "<!--StartfRagemnt...<span ...color:..>" via REGEX
+
+
+            || doubleClickedWord_html.contains(
           QString{"<!--StartFragment--><span style=\" color:%1;\">"}
-            .arg( this->textColors[TextTypeColor::NATIVE_TEXT_COLOR] ) )
-        || doubleClickedWord_html.contains(
-          QString{"<!--StartFragment--><span style=\" color:%1;\">"}
-            .arg( this->textColors[TextTypeColor::HORIZONTAL_LINE_COLOR] ) ) )
+            .arg( this->textColors[TextTypeColor::HORIZONTAL_LINE_COLOR] ) )
+        // TODO: check expected string-structure "<!--StartfRagemnt...<span ...color:..>" via REGEX
+      )
     {
         return;
     }
@@ -713,7 +723,7 @@ void MainWindow::resetHighlighting()
         .arg( this->textColors[TextTypeColor::FOREIGN_TEXT_KNOWN_COLOR] ) };
     const QString nativeWordStyleText{
         QString{"<span style=\" color:%1\">" }
-        .arg( this->textColors[TextTypeColor::NATIVE_TEXT_COLOR] ) };
+        .arg( this->textColors[TextTypeColor::NATIVE_UNMARKED_TEXT_COLOR] ) };
 
     QString htmlText{ this->ui->textEdit->toHtml() };
     htmlText.replace( unknownWordStyleText, nativeWordStyleText );
