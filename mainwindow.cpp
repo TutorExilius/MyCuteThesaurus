@@ -90,6 +90,11 @@ QString MainWindow::getNativeLang() const
     return this->dbManager->getCurrentNativeLang();
 }
 
+MainWindow::Mode MainWindow::getMode() const
+{
+    return this->mode;
+}
+
 void MainWindow::fillComboBox()
 {
     const QVector<QString> langs = this->dbManager->getLanguages();

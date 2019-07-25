@@ -50,6 +50,7 @@ public:
 
     QString getSelectedText() const;
     QString getNativeLang() const;
+    Mode getMode() const;
 
 private slots:
     void onLangChanged();

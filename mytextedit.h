@@ -4,6 +4,9 @@
 #include <QTextEdit>
 #include <QVector>
 
+// Forward-Declarations
+class MainWindow;
+
 class MyTextEdit : public QTextEdit
 {
     Q_OBJECT
@@ -27,6 +30,7 @@ public slots:
     void onEscapeTriggered();
 
 private:
+    MainWindow *mainWindow;
     // TODO: initialise this vector from database!
     QVector<QChar> part_of_word_sepearators{ '-', L'´', '`', L'’', '\'' };   // EXAMPLE
 };

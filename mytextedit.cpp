@@ -12,14 +12,18 @@
 
 MyTextEdit::MyTextEdit( QWidget *parent )
 : QTextEdit( parent )
+, mainWindow{ dynamic_cast<MainWindow*>( parent ) }
 {
     QAction* escAction = new QAction( "text4ESC", this );
     escAction->setShortcut( Qt::Key_Escape );
     escAction->setShortcutContext( Qt::WindowShortcut );
 
+
     QObject::connect( escAction, &QAction::triggered,
                       this, &MyTextEdit::onEscapeTriggered,
                       Qt::UniqueConnection );
+
+    this->addAction( escAction );
 }
 
 bool MyTextEdit::isPartOfWordSeperators( const QChar &ch ) const
@@ -41,11 +45,15 @@ void MyTextEdit::keyPressEvent( QKeyEvent *event )
 {
     QTextEdit::keyPressEvent( event );
 
-    switch( event->key() )
+    if( this->mainWindow != nullptr &&
+        this->mainWindow->getMode() == MainWindow::Mode::EDIT_MODE )
     {
-    case Qt::Key_Control:
-        this->setReadOnly( true );
-        break;
+        switch( event->key() )
+        {
+        case Qt::Key_Control:
+            this->setReadOnly( true );
+            break;
+        }
     }
 }
 
@@ -53,11 +61,15 @@ void MyTextEdit::keyReleaseEvent( QKeyEvent *event )
 {
     QTextEdit::keyPressEvent( event );
 
-    switch( event->key() )
+    if( this->mainWindow != nullptr &&
+        this->mainWindow->getMode() == MainWindow::Mode::EDIT_MODE )
     {
-    case Qt::Key_Control:
-        this->setReadOnly( false );
-        break;
+        switch( event->key() )
+        {
+        case Qt::Key_Control:
+            this->setReadOnly( false );
+            break;
+        }
     }
 }
 
